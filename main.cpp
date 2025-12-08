@@ -102,15 +102,22 @@ void find_bridges(int N, vector<vector<int>> &graph, vector<pair<int, int>> &bri
     //print_bridges(bridges);
 }
 
-void find_nonbridges(int N, vector<vector<int>> &graph, vector<pair<int, int>> &bridges, vector<pair<int, int>> &nonbridges){
+void find_branches(int N, vector<vector<int>> &graph, vector<pair<int, int>> &branches, vector<pair<int, int>> &nonbranches) {
     for(int i = 0; i < N; ++i){
-        for(auto neighbor : graph[i]){
-            if(find(bridges.begin(), bridges.end(), make_pair(i, neighbor)) == bridges.end()){
-                nonbridges.emplace_back(i, neighbor);
+        if(graph[i].size() <= 2){
+            for(auto neighbor : graph[i]){
+                branches.emplace_back(i, neighbor);
+                branches.emplace_back(neighbor, i);
+            }
+        } else {
+            for(auto neighbor : graph[i]){
+                nonbranches.emplace_back(i, neighbor);
+                nonbranches.emplace_back(neighbor, i);
             }
         }
     }
-    sort(nonbridges.begin(), nonbridges.end());
+    sort(branches.begin(), branches.end());
+    sort(nonbranches.begin(), nonbranches.end());
 }
 
 int get_type(int N, int M, vector<vector<int>> &graph, vector<int> &which_component, int total_components, vector<pair<int, int>> &bridges){
@@ -143,15 +150,6 @@ void print_path(vector<int> &path){
     }
 }
 
-void get_4(int N, int M, vector<vector<int>> &graph){
-    vector<int> nodes;
-    for(int i = 0; i < N; ++i){
-        if(graph[i].size() > 2){ //węzeł
-            nodes.emplace_back(i);
-        }
-    }
-}
-
 void BFS(int start, int N, vector<vector<int>> &graph, vector<int> &distance, vector<int> &parent){
     distance.assign(N, -1);
     parent.assign(N, -1);
@@ -174,8 +172,7 @@ void BFS(int start, int N, vector<vector<int>> &graph, vector<int> &distance, ve
     }
 }
 
-void get_path(int last_node, vector<int> &parent){
-    vector<int> path;
+void get_path(int last_node, vector<int> &parent, vector<int> &path){
     path.clear();
     int current = last_node;
     while(current != -1){
@@ -183,10 +180,10 @@ void get_path(int last_node, vector<int> &parent){
         current = parent[current];
     }
     reverse(path.begin(), path.end());
-    print_path(path);
+    //print_path(path);
 }
 
-void get_furthest(int N, int M, vector<vector<int>> &graph, int &leaf_before, int& next_leaf, bool last = false){
+void get_furthest(int N, int M, vector<vector<int>> &graph, vector<int> &path, int &leaf_before, int& next_leaf, bool last = false){
     vector<int> distance, parent;
     BFS(leaf_before, N, graph, distance, parent);
     int max_dist = 0;
@@ -197,38 +194,37 @@ void get_furthest(int N, int M, vector<vector<int>> &graph, int &leaf_before, in
         }
     }
     if(last){
-        get_path(next_leaf, parent);
+        get_path(next_leaf, parent, path);
     }
 }
 
-void get_5(int N, int M, vector<vector<int>> &graph){
-//cout << "~~~~~~~~~~~~~~~~~GET 5~~~~~~~~~~~~~~~~~\n";
+void get_diameter(int N, int M, vector<vector<int>> &graph, vector<int> &path){ //path should be empty by default
     int first_leaf = -1, second_leaf = -1, third_leaf = -1;
     for(int i = 0; i < N; ++i){
-        if(graph[i].size() == 1){ //liść
+        if(graph[i].size() == 1){ //leaf
             first_leaf = i;
             break;
         }
     }
-    get_furthest(N, M, graph, first_leaf, second_leaf);
-    get_furthest(N, M, graph, second_leaf, third_leaf, 1);
+    get_furthest(N, M, graph, path, first_leaf, second_leaf);
+    get_furthest(N, M, graph, path, second_leaf, third_leaf, 1);
 }
 
-void get_6(int N, int M, vector<vector<int>> &graph){
+void compress_branches(){
 
 }
 
-void find_solution(int N, int M, vector<vector<int>> &graph, int type){
-    /*if(type == 4){
-        get_4(N, M, graph);
-    }*/
-    if(type == 5){
-        get_5(N, M, graph);
-    } else if(type == 6){
-        get_6(N, M, graph);
-    } else {
-        cout << "1\n0";
+void change_graph(int N, int M, vector<vector<int>> &graph, int type){ //compress or change graph based on type
+    if(type == 4){
+        compress_branches();
     }
+    if(type == 5){
+        compress_branches();
+    }   
+}
+
+void find_solution(){ //solve graph based on type
+
 }
 
 int main()
@@ -236,12 +232,13 @@ int main()
     int N, M, total_components, type;
     vector<vector<int>> graph, tree;
     vector<int> which_component;
-    vector<pair<int, int>> bridges, nonbridges;
+    vector<pair<int, int>> bridges, branches, non_branches;
 
     get_input(N, M, graph);
     get_components(N, M, graph, which_component, total_components);
     find_bridges(N, graph, bridges);
-    find_nonbridges(N, graph, bridges, nonbridges);
+    find_branches(N, graph, branches, non_branches);
     type = get_type(N, M, graph, which_component, total_components, bridges);
-    find_solution(N, M, graph, type);
+    change_graph(N, M, graph, type);
+    find_solution();
 }
