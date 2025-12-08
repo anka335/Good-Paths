@@ -1,0 +1,1 @@
+We created a program that ouptuts the number of nodes equivalent to percentage of nodes that are bridges in graph. It showed that there are no graphs that have 5-50% bridges and most of graphs have no bridges at all. Test cases 22-31 were special and had over 50% of bridges
