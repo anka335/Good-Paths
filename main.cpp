@@ -102,6 +102,17 @@ void find_bridges(int N, vector<vector<int>> &graph, vector<pair<int, int>> &bri
     //print_bridges(bridges);
 }
 
+void find_nonbridges(int N, vector<vector<int>> &graph, vector<pair<int, int>> &bridges, vector<pair<int, int>> &nonbridges){
+    for(int i = 0; i < N; ++i){
+        for(auto neighbor : graph[i]){
+            if(find(bridges.begin(), bridges.end(), make_pair(i, neighbor)) == bridges.end()){
+                nonbridges.emplace_back(i, neighbor);
+            }
+        }
+    }
+    sort(nonbridges.begin(), nonbridges.end());
+}
+
 int get_type(int N, int M, vector<vector<int>> &graph, vector<int> &which_component, int total_components, vector<pair<int, int>> &bridges){
     if(total_components > 1){
         return 1;
@@ -225,11 +236,12 @@ int main()
     int N, M, total_components, type;
     vector<vector<int>> graph, tree;
     vector<int> which_component;
-    vector<pair<int, int>> bridges;
+    vector<pair<int, int>> bridges, nonbridges;
 
     get_input(N, M, graph);
     get_components(N, M, graph, which_component, total_components);
     find_bridges(N, graph, bridges);
+    find_nonbridges(N, graph, bridges, nonbridges);
     type = get_type(N, M, graph, which_component, total_components, bridges);
     find_solution(N, M, graph, type);
 }
