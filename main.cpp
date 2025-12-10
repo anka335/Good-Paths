@@ -1,9 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-std::random_device rd;
-std::mt19937 gen(rd());
-std::uniform_real_distribution<> dis(0.0, 1.0);
 
 void get_input(int &N, int &M, vector<vector<int>> &graph){
     cin >> N >> M;
@@ -102,22 +99,11 @@ void find_bridges(int N, vector<vector<int>> &graph, vector<pair<int, int>> &bri
     //print_bridges(bridges);
 }
 
-void find_branches(int N, vector<vector<int>> &graph, vector<pair<int, int>> &branches, vector<pair<int, int>> &nonbranches) {
+void find_branches(int N, vector<vector<int>> &graph, vector<bool> &branches) {
+    branches.assign(N, false);
     for(int i = 0; i < N; ++i){
-        if(graph[i].size() <= 2){
-            for(auto neighbor : graph[i]){
-                branches.emplace_back(i, neighbor);
-                branches.emplace_back(neighbor, i);
-            }
-        } else {
-            for(auto neighbor : graph[i]){
-                nonbranches.emplace_back(i, neighbor);
-                nonbranches.emplace_back(neighbor, i);
-            }
-        }
+        if(graph[i].size() <= 2) branches[i] = true;
     }
-    sort(branches.begin(), branches.end());
-    sort(nonbranches.begin(), nonbranches.end());
 }
 
 int get_type(int N, int M, vector<vector<int>> &graph, vector<int> &which_component, int total_components, vector<pair<int, int>> &bridges){
@@ -210,16 +196,67 @@ void get_diameter(int N, int M, vector<vector<int>> &graph, vector<int> &path){ 
     get_furthest(N, M, graph, path, second_leaf, third_leaf, 1);
 }
 
-void compress_branches(){
-
+void get_comp_nodes(int v, vector<bool> &visited, vector<vector<int>> &graph, vector<bool> &branches){
+    int count_ends = 0;
+    for(auto n : graph[v]){
+        if(visited[n]) continue;
+        int last_node = -1;
+        vector<int> path;
+        stack<int> s;
+        s.push(n);
+        visited[n] = true;
+        visited[v] = true;
+        while(!s.empty()){
+            int u = s.top();
+            s.pop();
+            if(!branches[u]){
+                last_node = u;
+                break;
+            }
+            path.emplace_back(u);
+            for(auto neighbor : graph[u]){
+                if(!visited[neighbor]){
+                    visited[neighbor] = true;
+                    s.push(neighbor);
+                }
+            }
+            if(s.empty() && graph[u].size() > 1){
+                if(!branches[graph[u][0]] && graph[u][0] != v){
+                    last_node = graph[u][0];
+                }
+                else if(!branches[graph[u][1]] && graph[u][1] != v){
+                    last_node = graph[u][1];
+                }
+                else {
+                    last_node = v;
+                }
+            }
+        }
+        cout << "PATH:\n";
+        for(auto p : path){
+            cout << p << " ";
+        }
+        cout << "with first node: " << v << " and with last node: " << last_node << '\n';
+        if(last_node == -1) count_ends++;
+    }
 }
 
-void change_graph(int N, int M, vector<vector<int>> &graph, int type){ //compress or change graph based on type
+void compress_branches(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, vector<vector<pair<int,int>>> &comp_graph){
+    //dfs
+    //puszczamy od nonbranches i konczymy na nonbranches
+    vector<bool> visited(N, false);
+    for(int i = 0; i < N; ++i){
+        if(!branches[i]) get_comp_nodes(i, visited, graph, branches);
+    }
+}
+
+void change_graph(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, int type){ //compress or change graph based on type
+    vector<vector<pair<int,int>>> comp_graph;
     if(type == 4){
-        compress_branches();
+        compress_branches(N, M, graph, branches, comp_graph);
     }
     if(type == 5){
-        compress_branches();
+        compress_branches(N, M, graph, branches, comp_graph);
     }   
 }
 
@@ -232,13 +269,14 @@ int main()
     int N, M, total_components, type;
     vector<vector<int>> graph, tree;
     vector<int> which_component;
-    vector<pair<int, int>> bridges, branches, non_branches;
+    vector<pair<int, int>> bridges;
+    vector<bool> branches; //branch - a node that has at most 2 neighbours
 
     get_input(N, M, graph);
     get_components(N, M, graph, which_component, total_components);
     find_bridges(N, graph, bridges);
-    find_branches(N, graph, branches, non_branches);
+    find_branches(N, graph, branches);
     type = get_type(N, M, graph, which_component, total_components, bridges);
-    change_graph(N, M, graph, type);
-    find_solution();
+    change_graph(N, M, graph, branches, type);
+    //find_solution();
 }
