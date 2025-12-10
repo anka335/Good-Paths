@@ -2,6 +2,11 @@
 using namespace std;
 
 
+struct CompNode{
+    int first_nonbranch, last_nonbranch, size, id;
+    vector<int> path;
+};
+
 void get_input(int &N, int &M, vector<vector<int>> &graph){
     cin >> N >> M;
     graph.assign(N, vector<int>());
@@ -196,7 +201,7 @@ void get_diameter(int N, int M, vector<vector<int>> &graph, vector<int> &path){ 
     get_furthest(N, M, graph, path, second_leaf, third_leaf, 1);
 }
 
-void get_comp_nodes(int v, vector<bool> &visited, vector<vector<int>> &graph, vector<bool> &branches){
+void get_comp_nodes(int v, vector<bool> &visited, vector<vector<int>> &graph, vector<bool> &branches, int &N_new, vector<CompNode> &comp_nodes, vector<int> &which_comp){
     int count_ends = 0;
     for(auto n : graph[v]){
         if(visited[n]) continue;
@@ -232,32 +237,106 @@ void get_comp_nodes(int v, vector<bool> &visited, vector<vector<int>> &graph, ve
                 }
             }
         }
-        cout << "PATH:\n";
+        /*cout << "PATH:\n";
         for(auto p : path){
             cout << p << " ";
         }
         cout << "with first node: " << v << " and with last node: " << last_node << '\n';
-        if(last_node == -1) count_ends++;
+        if(last_node == -1) count_ends++;*/
+        if(path.size() > 0){
+            N_new++;
+            CompNode comp_node;
+            comp_node.first_nonbranch = v;
+            comp_node.last_nonbranch = last_node;
+            comp_node.path = path;
+            comp_node.size = path.size();
+            comp_node.id = N_new;
+            comp_nodes.emplace_back(comp_node);
+        }
+        for(auto p : path){
+            which_comp[p] = N_new;
+        }
     }
 }
 
-void compress_branches(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, vector<vector<pair<int,int>>> &comp_graph){
-    //dfs
-    //puszczamy od nonbranches i konczymy na nonbranches
-    vector<bool> visited(N, false);
-    for(int i = 0; i < N; ++i){
-        if(!branches[i]) get_comp_nodes(i, visited, graph, branches);
+void get_weights(int N_new, vector<CompNode> &comp_nodes, vector<int> &weights){
+    weights.assign(N_new+1, 1);
+    for(auto c : comp_nodes)
+        weights[c.id] = c.size;
+}
+
+void print_comp_graph(int N_new, vector<vector<int>> &comp_graph, vector<int> &weights){
+    for(int i = 0; i <= N_new; ++i){
+        if(comp_graph[i].size() == 0) continue;
+        cout << i << ": ";
+        for(auto n : comp_graph[i]){
+            cout << n << " ";
+        }
+        cout << "  with weight " << weights[i];
+        cout << '\n';
     }
+}
+
+void get_comp_graph(int N, int N_new, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &which_comp){
+    comp_graph.assign(N_new+1, vector<int>());
+    for(int i = 0; i < N; ++i){
+        int id_v = which_comp[i];
+        for(auto neighbor : graph[i]){
+            int id_u = which_comp[neighbor];
+            if(id_v == -1 && id_u == -1)
+                comp_graph[i].push_back(neighbor);
+            else if(id_v == -1)
+                comp_graph[i].push_back(id_u);
+            else if(id_u == -1)
+                comp_graph[id_v].push_back(neighbor);
+        }
+    }
+}
+
+void compress_branches(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, vector<vector<int>> &comp_graph, vector<int> &weights){
+    int N_new = N;
+    vector<bool> visited(N, false);
+    vector<CompNode> comp_nodes;
+    vector<int> which_comp(N, -1);
+    for(int i = 0; i < N; ++i){
+        if(!branches[i]) get_comp_nodes(i, visited, graph, branches, N_new, comp_nodes, which_comp);
+    }
+
+    get_weights(N_new, comp_nodes, weights);
+    get_comp_graph(N, N_new, graph, comp_graph, which_comp);  
+    
+    //print_comp_graph(N_new, comp_graph, weights);
+}
+
+void no_compress_change(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights){
+    comp_graph = graph;
+    weights.assign(N, 1);
 }
 
 void change_graph(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, int type){ //compress or change graph based on type
-    vector<vector<pair<int,int>>> comp_graph;
+    vector<vector<int>> comp_graph;
+    vector<int> weights;
+    if(type == 1){
+        no_compress_change(N, graph, comp_graph, weights);
+    }
+    if(type == 2){
+        no_compress_change(N, graph, comp_graph, weights);
+    }
+    if(type == 3){
+        no_compress_change(N, graph, comp_graph, weights);
+    }
     if(type == 4){
-        compress_branches(N, M, graph, branches, comp_graph);
+        compress_branches(N, M, graph, branches, comp_graph, weights);
     }
     if(type == 5){
-        compress_branches(N, M, graph, branches, comp_graph);
-    }   
+        compress_branches(N, M, graph, branches, comp_graph, weights);
+    }
+    if(type == 6){
+        no_compress_change(N, graph, comp_graph, weights);
+    }
+    if(type == 7){
+        no_compress_change(N, graph, comp_graph, weights);
+    }
 }
 
 void find_solution(){ //solve graph based on type
