@@ -261,6 +261,12 @@ void get_weights(int N_new, vector<CompNode> &comp_nodes, vector<int> &weights){
         weights[c.id] = c.weight;
 }
 
+void get_comp_stats(vector<int> &weights){
+    int sum = 0;
+    for(auto w : weights) if(w != 1) sum+=w;
+    cout << "SUM OF ALL WEIGHTS DIFFERENT FROM 1 (sum of compressed nodes) IS EQUAL " << sum << '\n';
+}
+
 void print_comp_graph(int N_new, vector<vector<int>> &comp_graph, vector<int> &weights){
     for(int i = 0; i <= N_new; ++i){
         if(comp_graph[i].size() == 0) continue;
@@ -271,6 +277,7 @@ void print_comp_graph(int N_new, vector<vector<int>> &comp_graph, vector<int> &w
         cout << "  with weight " << weights[i];
         cout << '\n';
     }
+    get_comp_stats(weights);
 }
 
 void get_comp_graph(int N, int N_new, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &which_comp){
@@ -289,12 +296,6 @@ void get_comp_graph(int N, int N_new, vector<vector<int>> &graph, vector<vector<
     }
 }
 
-void get_comp_stats(vector<int> &weights){
-    int sum = 0;
-    for(auto w : weights) if(w != 1) sum+=w;
-    cout << "SUM OF ALL WEIGHTS DIFFERENT FROM 1 (sum of compressed nodes) IS EQUAL " << sum << '\n';
-}
-
 void compress_branches(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, vector<vector<int>> &comp_graph, vector<int> &weights, vector<CompNode> &comp_nodes, vector<int> &which_comp){
     int N_new = N;
     vector<bool> visited(N, false);
@@ -307,7 +308,6 @@ void compress_branches(int N, int M, vector<vector<int>> &graph, vector<bool> &b
     get_comp_graph(N, N_new, graph, comp_graph, which_comp);  
     
     print_comp_graph(N_new, comp_graph, weights);
-    get_comp_stats(weights);
 }
 
 void no_compress_change(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights){
@@ -375,9 +375,20 @@ void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> 
     }
 }
 
-void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes){ //solve graph based on type
+void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type){ //solve graph based on type
     list<int> comp_path = {11, 1, 8, 3}; //do uzupelnienia przez local search
-    decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
+
+    //~~~~~~~~~~~~MIEJSCE NA WYWOLANIE FUNKCJI KTORA SZUKA ROZWIAZANIA~~~~~~~~~~~
+    
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    if(type == 4){
+        decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
+    }
+    if(type == 5){
+        decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
+    }
 }
 
 int main()
@@ -399,3 +410,7 @@ int main()
     //find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes);
     //print_final_path(final_path);
 }
+
+//branches na chains
+//which_comp na which_compr/which_comp_node
+//jak nazwac węzeł po angielsku
