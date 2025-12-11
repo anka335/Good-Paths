@@ -239,7 +239,6 @@ void get_comp_nodes(int v, vector<bool> &visited, vector<vector<int>> &graph, ve
             }
         }
         if(path.size() > 3){
-            N_new++;
             CompNode comp_node;
             comp_node.first_nonbranch = path.front();
             comp_node.last_nonbranch = path.back();
@@ -252,12 +251,13 @@ void get_comp_nodes(int v, vector<bool> &visited, vector<vector<int>> &graph, ve
             for(auto p : path){
                 which_comp[p] = N_new;
             } 
+            N_new++;
         }
     }
 }
 
 void get_weights(int N_new, vector<CompNode> &comp_nodes, vector<int> &weights){
-    weights.assign(N_new+1, 1);
+    weights.assign(N_new, 1);
     for(auto c : comp_nodes)
         weights[c.id] = c.weight;
 }
@@ -269,7 +269,7 @@ void get_comp_stats(vector<int> &weights){
 }
 
 void print_comp_graph(int N_new, vector<vector<int>> &comp_graph, vector<int> &weights){
-    for(int i = 0; i <= N_new; ++i){
+    for(int i = 0; i < N_new; ++i){
         if(comp_graph[i].size() == 0) continue;
         cout << i << ": ";
         for(auto n : comp_graph[i]){
@@ -282,7 +282,7 @@ void print_comp_graph(int N_new, vector<vector<int>> &comp_graph, vector<int> &w
 }
 
 void get_comp_graph(int N, int N_new, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &which_comp){
-    comp_graph.assign(N_new+1, vector<int>());
+    comp_graph.assign(N_new, vector<int>());
     for(int i = 0; i < N; ++i){
         int id_v = which_comp[i];
         for(auto neighbor : graph[i]){
@@ -298,7 +298,7 @@ void get_comp_graph(int N, int N_new, vector<vector<int>> &graph, vector<vector<
 }
 
 void compress_branches(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, vector<vector<int>> &comp_graph, vector<int> &weights, vector<CompNode> &comp_nodes, vector<int> &which_comp){
-    int N_new = N;
+    int N_new = N+1;
     vector<bool> visited(N, false);
     which_comp.assign(N, -1);
     for(int i = 0; i < N; ++i){
