@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+mt19937 rng;
 
 struct CompNode{
     int first_nonbranch, last_nonbranch, weight, id;
@@ -313,6 +314,7 @@ void compress_branches(int N, int M, vector<vector<int>> &graph, vector<bool> &b
 void no_compress_change(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights){
     comp_graph = graph;
     weights.assign(N, 1);
+    print_comp_graph(N, comp_graph, weights);
 }
 
 void change_graph(int N, int M, vector<vector<int>> &graph, vector<bool> &branches, vector<int> &which_comp, vector<CompNode> &comp_nodes, vector<int> &weights, vector<vector<int>> &comp_graph, int type){ //compress or change graph based on type
@@ -375,11 +377,63 @@ void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> 
     }
 }
 
-void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type){ //solve graph based on type
-    list<int> comp_path = {11, 1, 8, 3}; //do uzupelnienia przez local search
+int best_neigh(int v, vector<vector<int>> &comp_graph, vector<int> &weights, vector<bool> &seen, vector<bool> &vis)
+{
+    int best_u = -1;
+    int best_weight = 0;
+    for(int u : comp_graph[v])
+        if(!vis[u] && !seen[u] && weights[u] > best_weight)
+        {
+            best_u = u;
+            best_weight = weights[u];
+        }
+    return best_u;
+}
+
+void local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<bool> &seen, vector<bool> &vis)
+{
+    int start;
+    do
+    {
+        start = rng() % comp_graph.size();
+    }while(comp_graph[start].empty());
+
+    int v = start;
+    do
+    {
+        comp_path.emplace_back(v);
+        vis[v] = true;
+        int next = best_neigh(v, comp_graph, weights, seen, vis);
+        for(int u : comp_graph[v])
+            seen[u] = true;
+        v = next;
+    } while (v != -1);
+}
+
+void call_local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights)
+{
+    //comp_path puste
+    vector<bool> seen(comp_graph.size(), false);
+    vector<bool> vis(comp_graph.size(), false);
+    int runs = 1000;
+    while(runs-->0)
+    {
+        list<int> curr_path;
+        local_search(curr_path, comp_graph, weights, seen, vis);
+        if(curr_path.size() > comp_path.size())
+            comp_path = curr_path;
+        seen.assign(comp_graph.size(), false);
+        vis.assign(comp_graph.size(), false);
+    }
+    print_final_path(comp_path);
+}
+
+void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type)
+{ //solve graph based on type
+    list<int> comp_path; //do uzupelnienia przez local search
 
     //~~~~~~~~~~~~MIEJSCE NA WYWOLANIE FUNKCJI KTORA SZUKA ROZWIAZANIA~~~~~~~~~~~
-    
+    call_local_search(comp_path, comp_graph, weights);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -406,9 +460,10 @@ int main()
     find_bridges(N, graph, bridges);
     find_branches(N, graph, branches);
     type = get_type(N, M, graph, which_component, total_components, bridges);
+    //cerr << type << '\n';
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, type);
-    //find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes);
-    //print_final_path(final_path);
+    find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type);
+    print_final_path(final_path);
 }
 
 //branches na chains
