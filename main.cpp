@@ -352,6 +352,7 @@ void print_final_path(list<int> &final_path){
 
 void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &comp_path, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes){
     int neigh_before = -1, neigh_after = -1;
+    //print_final_path(comp_path);
     while(!comp_path.empty()){
         int v = comp_path.front();
         comp_path.pop_front();
@@ -361,20 +362,32 @@ void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> 
         
         if(v < N && which_comp[v] == -1){
             final_path.emplace_back(v);
+            neigh_before = v;
             continue;
         }
         int id = v-N-1;
         //cout << "id: " << id <<  " comp nodes size: " << comp_nodes.size() <<'\n';
         CompNode comp_node = comp_nodes[id];
         list<int> path = comp_node.path;
-        //cout << "neigh_before: " << neigh_before << " neigh_after: " << neigh_after << " comp_node.last_nonbranch: " << comp_node.last_nonbranch << " comp_node.first_nonbranch: " << comp_node.first_nonbranch << '\n';
+        //cout << "v: " << v << " neigh_before: " << neigh_before << " neigh_before: " << neigh_before << " neigh_after: " << neigh_after << " comp_node.last_nonbranch: " << comp_node.last_nonbranch << " comp_node.first_nonbranch: " << comp_node.first_nonbranch << '\n';
+        //cout << "path: ";
+        /*for(auto p : path){
+            cout << p << ' ';
+        }
+        cout << '\n';*/
+        
         if(neigh_after != -1 && comp_node.last_nonbranch != neigh_after) reverse(path.begin(), path.end());
         else if(neigh_before != -1 && comp_node.first_nonbranch != neigh_before) reverse(path.begin(), path.end());
 
         for(auto p : path){
             final_path.emplace_back(p);
         }
+        neigh_before = v;
     }
+    /*for(auto p : final_path){
+            cout << p << " ";
+        }
+        cout << '\n';*/
 }
 
 int best_neigh(int v, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
@@ -543,7 +556,7 @@ int main()
     find_bridges(N, graph, bridges);
     find_branches(N, graph, branches);
     type = get_type(N, M, graph, which_component, total_components, bridges);
-    cerr << "TYPE: " << type << '\n';
+    //cerr << "TYPE: " << type << '\n';
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, type);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
     print_final_path(final_path);
