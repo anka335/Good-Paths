@@ -193,7 +193,7 @@ void get_path(int last_node, vector<int> &parent, list<int> &path){
     //print_path(path);
 }
 
-void get_furthest(vector<vector<int>> &comp_graph, list<int> &path, vector<int> &weights, int &leaf_before, int& next_leaf, bool last = false){
+int get_furthest(vector<vector<int>> &comp_graph, list<int> &path, vector<int> &weights, int &leaf_before, int& next_leaf, bool last = false){
     vector<int> distance, parent;
     dijkstra(leaf_before, comp_graph, distance, weights, parent);
     int max_dist = 0;
@@ -207,9 +207,10 @@ void get_furthest(vector<vector<int>> &comp_graph, list<int> &path, vector<int> 
     if(last){
         get_path(next_leaf, parent, path);
     }
+    return max_dist;
 }
 
-void get_diameter(vector<vector<int>> &comp_graph, list<int> &path, vector<int> &weights){ //path should be empty by default
+int get_diameter(vector<vector<int>> &comp_graph, list<int> &path, vector<int> &weights){ //path should be empty by default
     int first_leaf = -1, second_leaf = -1, third_leaf = -1;
     for(int i = 0; i < comp_graph.size(); ++i){
         if(!comp_graph[i].empty())
@@ -222,7 +223,7 @@ void get_diameter(vector<vector<int>> &comp_graph, list<int> &path, vector<int> 
     //cerr << first_leaf << ' ';
     get_furthest(comp_graph, path, weights, first_leaf, second_leaf);
     //cerr << second_leaf << ' ';
-    get_furthest(comp_graph, path, weights, second_leaf, third_leaf, 1);
+    return get_furthest(comp_graph, path, weights, second_leaf, third_leaf, 1);
     //cerr << third_leaf << '\n';
 }
 
@@ -601,14 +602,14 @@ int local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<i
     return result;
 }
 
-void call_local_search(int N, list<int> &comp_path, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
+int call_local_search(int N, list<int> &comp_path, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
 {
     //comp_path puste
     vector<int> seen(comp_graph.size(), 0);
     vector<bool> vis(comp_graph.size(), false);
     list<int> decomp_path;
     int best_result = 0;
-    while(((float)(clock()-time_start)) / CLOCKS_PER_SEC < 4.0f)
+    while(((float)(clock()-time_start)) / CLOCKS_PER_SEC < 17.f)
     {
         list<int> curr_path;
         int curr_result = local_search(curr_path, comp_graph, weights, seen, vis);
@@ -630,6 +631,7 @@ void call_local_search(int N, list<int> &comp_path, vector<vector<int>> &graph, 
     }
     //print_final_path(comp_path);
     //cerr << best_result << '\n';
+    return best_result;
 }
 
 
@@ -729,10 +731,13 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
 
     //~~~~~~~~~~~~MIEJSCE NA WYWOLANIE FUNKCJI KTORA SZUKA ROZWIAZANIA~~~~~~~~~~~
     //call_local_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
+    int curr_value;
     if(type == 5)
-        get_diameter(comp_graph, comp_path, weights);
+    {
+        curr_value = get_diameter(comp_graph, comp_path, weights);
+    }
     else
-        call_local_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
+        curr_value = call_local_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
     
     float time_limit = 19.f;
     vector<bool> vis(comp_graph.size(), false);
@@ -748,12 +753,68 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
     {
         ++elapse;
         bool any_change = false;
+        int pref_value = 0;
+        for(auto tail_start = comp_path.begin(); tail_start != comp_path.end() && ((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit; tail_start++)
+        {
+            list<int> tail = {*tail_start};
+            while(extend_front(tail, comp_graph, weights, seen, vis)) {}
+            tail.pop_back();
+            int tail_value = 0;
+            for(int v : tail)
+                tail_value += weights[v];
+            if(tail_value >= pref_value)
+            {
+                //cerr << "NEW TAIL\n";
+                for(auto v_it = comp_path.begin(); v_it != tail_start; ++v_it)
+                {
+                    for(int u : comp_graph[*v_it])
+                    {
+                        seen[u]--;
+                        vis[u] = false;
+                    }
+                }
+                comp_path.erase(comp_path.begin(), tail_start);
+                comp_path.splice(comp_path.begin(), tail);
+                pref_value = tail_value;
+                any_change = true;
+            }
+            else if(tail_value >= curr_value - pref_value - weights[*tail_start])
+            {
+                for(auto v_it = next(tail_start); v_it != comp_path.end(); ++v_it)
+                {
+                    for(int u : comp_graph[*v_it])
+                    {
+                        seen[u]--;
+                        vis[u] = false;
+                    }
+                }
+                comp_path.erase(next(tail_start), comp_path.end());
+                tail.reverse();
+                comp_path.splice(next(tail_start), tail);
+                curr_value = pref_value + tail_value + weights[*tail_start];
+                any_change = true;
+            }
+            else
+            {
+                for(int v : tail)
+                    for(int u : comp_graph[v])
+                    {
+                        seen[u]--;
+                        vis[u] = false;
+                    }
+            }
+            pref_value += weights[*tail_start];
+            if(!any_change)
+                break;
+        }
         for(auto omit_it = comp_path.begin(); omit_it != comp_path.end() && ((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit;)
         {
             // cout << *omit_it << '\n';
             // for(int a : best_path)
             //     cout << a << ' ';
             // cout << "-> ";
+
+            
             int len_before = comp_path.size();
             omit_it = omit_node(omit_it, comp_graph, vis, comp_path, seen);
             any_change |= len_before != comp_path.size();
@@ -803,6 +864,7 @@ int main()
     sort_graph(comp_graph);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
     //test(N, graph, final_path);
+    //cout << final_path.size() << '\n';
     print_final_path(final_path);
 }
 
