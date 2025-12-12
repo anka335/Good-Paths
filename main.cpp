@@ -421,18 +421,58 @@ void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> 
         cout << '\n';*/
 }
 
+int unseen_count(int v, vector<vector<int>> &comp_graph, vector<int> &seen)
+{
+    int res = 0;
+    for(int u : comp_graph[v])
+        if(!seen[u])
+            res++;
+    return res;
+}
+
+int best_heur_neigh(int v, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
+{
+    vector<int> best_u;
+    int best_unseen_count = INF;
+    for(int u : comp_graph[v])
+        if(!vis[u] && seen[u] == 1)
+        {
+            int u_unseen_count = unseen_count(u, comp_graph, seen);
+            if(u_unseen_count == 0)
+                continue;
+            if(best_unseen_count > u_unseen_count)
+            {
+                best_u = {u};
+                best_unseen_count = u_unseen_count;
+            }
+            else if(best_unseen_count > u_unseen_count)
+                best_u.emplace_back(u);
+        }
+    if(best_u.empty())
+        return -1;
+    return best_u[rng() % best_u.size()];
+}
+
 int best_neigh(int v, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
 {
-    int best_u = -1;
+    vector<int> best_u;
     int best_weight = 0;
     for(int u : comp_graph[v])
-        if(!vis[u] && seen[u] == 1 && weights[u] > best_weight)
+        if(!vis[u] && seen[u] == 1)
         {
-            best_u = u;
-            best_weight = weights[u];
+            if(weights[u] > best_weight)
+            {
+                best_u = {u};
+                best_weight = weights[u];
+            }
+            else if(weights[u] == best_weight)
+                best_u.emplace_back(u);
         }
-    return best_u;
+    if(best_u.empty())
+        return -1;
+    return best_u[rng() % best_u.size()];
 }
+
 int test(int N, vector<vector<int>> &graph, list<int> &path)
 {
     vector<int> seen(N, 0);
@@ -494,36 +534,71 @@ int test(int N, vector<vector<int>> &graph, list<int> &path)
     //\\cerr << "ZAJEBISCIE\n";
     return 0;
 }
-
-void local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
+bool extend_back(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
 {
+    //return true if it attached a new node
+    int v = best_heur_neigh(comp_path.back(), comp_graph, weights, seen, vis);
+    if(v == -1)
+        return false;
+    comp_path.emplace_back(v);
+    vis[v] = true;
+    for(int u : comp_graph[v])
+        seen[u]++;
+    return true;
+}
+bool extend_front(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
+{
+    //return true if it attached a new node
+    int v = best_heur_neigh(comp_path.front(), comp_graph, weights, seen, vis);
+    if(v == -1)
+        return false;
+    comp_path.emplace_front(v);
+    vis[v] = true;
+    for(int u : comp_graph[v])
+        seen[u]++;
+    return true;
+}
+int local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
+{
+    //return total weight
     int start;
     do
     {
         start = rng() % comp_graph.size();
     }while(comp_graph[start].empty());
-
+    comp_path.clear();
+    comp_path.emplace_back(start);
+    vis[start] = true;
+    for(int u : comp_graph[start])
+        seen[u]++;
     //building back
-    int v = start;
-    do
-    {
-        comp_path.emplace_back(v);
-        vis[v] = true;
-        for(int u : comp_graph[v])
-            seen[u]++;
-        v = best_neigh(v, comp_graph, weights, seen, vis);
-    } while (v != -1);
+    while(extend_back(comp_path, comp_graph, weights, seen, vis)){}
+    // int v = start;
+    // do
+    // {
+    //     comp_path.emplace_back(v);
+    //     vis[v] = true;
+    //     for(int u : comp_graph[v])
+    //         seen[u]++;
+    //     v = best_neigh(v, comp_graph, weights, seen, vis);
+    // } while (v != -1);
 
     //building front
-    v = best_neigh(start, comp_graph, weights, seen, vis);
-    while(v != -1)
-    {
-        comp_path.emplace_front(v);
-        vis[v] = true;
-        for(int u : comp_graph[v])
-            seen[u]++;
-        v = best_neigh(v, comp_graph, weights, seen, vis);
-    }
+    while(extend_front(comp_path, comp_graph, weights, seen, vis)){}
+    // v = best_neigh(start, comp_graph, weights, seen, vis);
+    // while(v != -1)
+    // {
+    //     comp_path.emplace_front(v);
+    //     vis[v] = true;
+    //     for(int u : comp_graph[v])
+    //         seen[u]++;
+    //     v = best_neigh(v, comp_graph, weights, seen, vis);
+    // }
+    int result = 0;
+    for(int v : comp_path)
+        result += weights[v];
+    //cerr << result << '\n';
+    return result;
 }
 
 void call_local_search(int N, list<int> &comp_path, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
@@ -532,12 +607,14 @@ void call_local_search(int N, list<int> &comp_path, vector<vector<int>> &graph, 
     vector<int> seen(comp_graph.size(), 0);
     vector<bool> vis(comp_graph.size(), false);
     list<int> decomp_path;
+    int best_result = 0;
     while(((float)(clock()-time_start)) / CLOCKS_PER_SEC < 4.0f)
     {
         list<int> curr_path;
-        local_search(curr_path, comp_graph, weights, seen, vis);
-        if(curr_path.size() > comp_path.size())
+        int curr_result = local_search(curr_path, comp_graph, weights, seen, vis);
+        if(curr_result > best_result)
         {
+            best_result = curr_result;
             comp_path = curr_path;
         }
         // if(type == 4 || type == 5)
@@ -552,6 +629,7 @@ void call_local_search(int N, list<int> &comp_path, vector<vector<int>> &graph, 
         vis.assign(comp_graph.size(), false);
     }
     //print_final_path(comp_path);
+    //cerr << best_result << '\n';
 }
 
 
@@ -651,7 +729,7 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
 
     //~~~~~~~~~~~~MIEJSCE NA WYWOLANIE FUNKCJI KTORA SZUKA ROZWIAZANIA~~~~~~~~~~~
     //call_local_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
-    if(type == 4 || type == 5)
+    if(type == 5)
         get_diameter(comp_graph, comp_path, weights);
     else
         call_local_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
@@ -665,20 +743,31 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
         for(int u : comp_graph[v])
             seen[u]++;
     }
+    int elapse = 0;
     while(((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit)
     {
+        ++elapse;
+        bool any_change = false;
         for(auto omit_it = comp_path.begin(); omit_it != comp_path.end() && ((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit;)
         {
             // cout << *omit_it << '\n';
             // for(int a : best_path)
             //     cout << a << ' ';
             // cout << "-> ";
+            int len_before = comp_path.size();
             omit_it = omit_node(omit_it, comp_graph, vis, comp_path, seen);
+            any_change |= len_before != comp_path.size();
+
         //     for(int a : best_path)
         //         cout << a << ' ';
         //     cout << '\n';
         }
+        while(extend_front(comp_path, comp_graph, weights, seen, vis)){ any_change = true; }
+        while(extend_back(comp_path, comp_graph, weights, seen, vis)){ any_change = true; }
+        if(!any_change)
+            break;
     }
+    //cout << elapse << '\n';
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     if(type == 4){
@@ -713,7 +802,7 @@ int main()
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, which_component, best_component, type);
     sort_graph(comp_graph);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
-    test(N, graph, final_path);
+    //test(N, graph, final_path);
     print_final_path(final_path);
 }
 
