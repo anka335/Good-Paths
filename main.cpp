@@ -612,7 +612,7 @@ int local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<i
     return result;
 }
 
-int call_local_search(int N, list<int> &comp_path, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
+int call_start_search(int N, list<int> &comp_path, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
 {
     //comp_path puste
     vector<int> seen(comp_graph.size(), 0);
@@ -770,23 +770,30 @@ void unsee_path(list<int>::iterator begin, list<int>::iterator end, vector<vecto
         unsee_node(*v_it, graph, seen, vis);
 }
 
-void extend_all(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool &any_change){
-    while(extend_front(comp_path, comp_graph, weights, seen, vis)){ any_change = true; }
-    while(extend_back(comp_path, comp_graph, weights, seen, vis)){ any_change = true; }
-    while(extend_front(comp_path, comp_graph, weights, seen, vis, false)){ any_change = true; }
-    while(extend_back(comp_path, comp_graph, weights, seen, vis, false)){ any_change = true; }
+void extend_all(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis){
+    while(extend_front(comp_path, comp_graph, weights, seen, vis)){}
+    while(extend_back(comp_path, comp_graph, weights, seen, vis)){}
+    while(extend_front(comp_path, comp_graph, weights, seen, vis, false)){}
+    while(extend_back(comp_path, comp_graph, weights, seen, vis, false)){}
 }
 
-void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit, int &tail_exchange_count, int &curr_value, int &pref_value, bool &any_change){
+//DO ZMIANY
+void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit, int &curr_value){
+    int pref_value = 0;
+
     for(auto tail_start = comp_path.begin(); tail_start != comp_path.end() && ((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit; tail_start++)
-    {
+    {   
         list<int> tail = {*tail_start};
+
         while(extend_front(tail, comp_graph, weights, seen, vis)) {}
         while(extend_front(tail, comp_graph, weights, seen, vis, false)) {}
+
         tail.pop_back();
         int tail_value = 0;
-        for(int v : tail)
+
+        for(int v : tail) 
             tail_value += weights[v];
+
         if(tail_value >= pref_value)
         {
             //cerr << "NEW TAIL\n";
@@ -794,8 +801,6 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
             comp_path.erase(comp_path.begin(), tail_start);
             comp_path.splice(comp_path.begin(), tail);
             pref_value = tail_value;
-            any_change = true;
-            tail_exchange_count++;
         }
         else if(tail_value >= curr_value - pref_value - weights[*tail_start])
         {
@@ -804,8 +809,6 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
             tail.reverse();
             comp_path.splice(next(tail_start), tail);
             curr_value = pref_value + tail_value + weights[*tail_start];
-            any_change = true;
-            tail_exchange_count++;
         }
         else unsee_path(tail, comp_graph, seen, vis);
         
@@ -813,8 +816,14 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
     }
 }
 
+//DO ZMIANY
+void find_detour(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit){ //DO ZMIANY
+    for(auto omit_it = comp_path.begin(); omit_it != comp_path.end() && ((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit;){
+        omit_it = omit_node(omit_it, comp_graph, vis, comp_path, seen);
+    }
+}
+
 void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, list<int> &comp_path, int &curr_value, clock_t &time_start){
-    int elapse = 0, tail_exchange_count = 0;
     float time_limit = 19.f;
     vector<bool> vis(comp_graph.size(), false);
     vector<int> seen(comp_graph.size(), 0);
@@ -822,30 +831,24 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
     
     while(((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit)
     {
-        ++elapse;
-        bool any_change = false;
-        int pref_value = 0;
-
         //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-        find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, tail_exchange_count, curr_value, pref_value, any_change);
+        find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, curr_value);
 
-        for(auto omit_it = comp_path.begin(); omit_it != comp_path.end() && ((float)(clock()-time_start)) / CLOCKS_PER_SEC < time_limit;)
-        {
-            int len_before = comp_path.size();
-            omit_it = omit_node(omit_it, comp_graph, vis, comp_path, seen);
-            any_change |= len_before != comp_path.size();
-        }
-        extend_all(comp_path, comp_graph, weights, seen, vis, any_change);
+        //szukanie objazdu
+        find_detour(comp_path, comp_graph, weights, seen, vis, time_start, time_limit);
+        
+        //poszerzanie końców
+        extend_all(comp_path, comp_graph, weights, seen, vis);
     }
 }
 
 void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
 {
     list<int> comp_path;
-
     int curr_value;
+
     if(type == 4){
-        curr_value = call_local_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
+        curr_value = call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, curr_value, time_start);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
@@ -856,7 +859,7 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else{
-        curr_value = call_local_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
+        curr_value = call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, curr_value, time_start);
         final_path = comp_path;
     }
