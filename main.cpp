@@ -849,7 +849,7 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, curr_value, time_start);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
-    if(type == 5)
+    else if(type == 5)
     {
         curr_value = get_diameter(comp_graph, comp_path, weights);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, curr_value, time_start);
