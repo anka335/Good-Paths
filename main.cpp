@@ -165,7 +165,6 @@ void dijkstra(int start, vector<vector<int>> &comp_graph, vector<int> &distance,
     //cerr << start << ' ' << weights.size() << '\n';
     pq.push({weights[start], start});
     distance[start] = weights[start];
-    int path_end_node = -1;
 
     while(!pq.empty()){
         auto [dist, u] = pq.top();
@@ -481,11 +480,11 @@ int best_neigh(int v, vector<vector<int>> &comp_graph, vector<int> &weights, vec
     return best_u[rng() % best_u.size()];
 }
 
-int test(int N, vector<vector<int>> &graph, list<int> &path)
+int test(vector<vector<int>> &graph, list<int> &path)
 {
-    vector<int> seen(N, 0);
-    vector<bool> vis(N, false);
-    if(path.front() >= N)
+    vector<int> seen(graph.size(), 0);
+    vector<bool> vis(graph.size(), false);
+    if(path.front() >= graph.size())
     {
         cerr << "node >= N";
         for(int a : path)
@@ -501,7 +500,7 @@ int test(int N, vector<vector<int>> &graph, list<int> &path)
     do
     {
         int v = *it;
-        if(v >= N)
+        if(v >= graph.size())
         {
             cerr << "node >= N";
             // for(int a : path)
@@ -539,107 +538,11 @@ int test(int N, vector<vector<int>> &graph, list<int> &path)
         prev = *it;
         it++;
     } while (it != path.end());
-    //\\cerr << "ZAJEBISCIE\n";
+    cerr << "ZAJEBISCIE\n";
     return 0;
 }
-bool extend_back(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true)
-{
-    //return true if it attached a new node
-    int v;
-    if(heur)
-        v = best_heur_neigh(comp_path.back(), comp_graph, weights, seen, vis);
-    else
-        v = best_neigh(comp_path.front(), comp_graph, weights, seen, vis);
-    if(v == -1)
-        return false;
-    comp_path.emplace_back(v);
-    vis[v] = true;
-    for(int u : comp_graph[v])
-        seen[u]++;
-    return true;
-}
-bool extend_front(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true)
-{
-    //return true if it attached a new node
-    int v;
-    if(heur)
-        v = best_heur_neigh(comp_path.front(), comp_graph, weights, seen, vis);
-    else
-        v = best_neigh(comp_path.front(), comp_graph, weights, seen, vis);
-    if(v == -1)
-        return false;
-    comp_path.emplace_front(v);
-    vis[v] = true;
-    for(int u : comp_graph[v])
-        seen[u]++;
-    return true;
-}
-int local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
-{
-    //return total weight
-    int start;
-    do
-    {
-        start = rng() % comp_graph.size();
-    }while(comp_graph[start].empty());
-    comp_path.clear();
-    comp_path.emplace_back(start);
-    vis[start] = true;
-    for(int u : comp_graph[start])
-        seen[u]++;
-    //building back
-    while(extend_back(comp_path, comp_graph, weights, seen, vis)){}
-    // int v = start;
-    // do
-    // {
-    //     comp_path.emplace_back(v);
-    //     vis[v] = true;
-    //     for(int u : comp_graph[v])
-    //         seen[u]++;
-    //     v = best_neigh(v, comp_graph, weights, seen, vis);
-    // } while (v != -1);
 
-    //building front
-    while(extend_front(comp_path, comp_graph, weights, seen, vis)){}
-    // v = best_neigh(start, comp_graph, weights, seen, vis);
-    // while(v != -1)
-    // {
-    //     comp_path.emplace_front(v);
-    //     vis[v] = true;
-    //     for(int u : comp_graph[v])
-    //         seen[u]++;
-    //     v = best_neigh(v, comp_graph, weights, seen, vis);
-    // }
-    int result = 0;
-    for(int v : comp_path)
-        result += weights[v];
-    //cerr << result << '\n';
-    return result;
-}
 
-int call_start_search(int N, list<int> &comp_path, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
-{
-    //comp_path puste
-    vector<int> seen(comp_graph.size(), 0);
-    vector<bool> vis(comp_graph.size(), false);
-    list<int> decomp_path;
-    int best_result = 0;
-    while(check_time(17.0f, time_start))
-    {
-        list<int> curr_path;
-        int curr_result = local_search(curr_path, comp_graph, weights, seen, vis);
-        if(curr_result > best_result)
-        {
-            best_result = curr_result;
-            comp_path = curr_path;
-        }
-        seen.assign(comp_graph.size(), 0);
-        vis.assign(comp_graph.size(), false);
-    }
-    //print_final_path(comp_path);
-    //cerr << best_result << '\n';
-    return best_result;
-}
 
 void sort_graph(vector<vector<int>> &graph)
 {
@@ -657,9 +560,8 @@ bool is_edge(int v, int u, vector<vector<int>> &graph)
 
 bool see_node(int v, vector<vector<int>> &graph, vector<int> &seen, vector<bool> &vis)
 {
-    if(vis[v])
-        return false;    
-        //cerr << "dupsonik\n";
+    // if(vis[v])
+    //     cerr << "dupsonik\n";
     vis[v] = true;
     for(int u : graph[v])
         seen[u]++;
@@ -668,8 +570,8 @@ bool see_node(int v, vector<vector<int>> &graph, vector<int> &seen, vector<bool>
 
 void unsee_node(int v, vector<vector<int>> &graph, vector<int> &seen, vector<bool> &vis)
 {
-    if(!vis[v])
-        cerr << "dupson\n";
+    // if(!vis[v])
+    //     cerr << "dupson\n";
     vis[v] = false;
     for(int u : graph[v])
     {
@@ -703,6 +605,35 @@ void unsee_path(list<int>::iterator begin, list<int>::iterator end, vector<vecto
     for(auto v_it = begin; v_it != end; ++v_it)
         unsee_node(*v_it, graph, seen, vis);
 }
+bool extend_back(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true)
+{
+    //return true if it attached a new node
+    int v;
+    if(heur)
+        v = best_heur_neigh(comp_path.back(), comp_graph, weights, seen, vis);
+    else
+        v = best_neigh(comp_path.back(), comp_graph, weights, seen, vis);
+    if(v == -1)
+        return false;
+    comp_path.emplace_back(v);
+    see_node(v, comp_graph, seen, vis);
+    return true;
+}
+
+bool extend_front(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true)
+{
+    //return true if it attached a new node
+    int v;
+    if(heur)
+        v = best_heur_neigh(comp_path.front(), comp_graph, weights, seen, vis);
+    else
+        v = best_neigh(comp_path.front(), comp_graph, weights, seen, vis);
+    if(v == -1)
+        return false;
+    comp_path.emplace_front(v);
+    see_node(v, comp_graph, seen, vis);
+    return true;
+}
 
 void extend_all(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis){
     while(extend_front(comp_path, comp_graph, weights, seen, vis)){}
@@ -710,12 +641,61 @@ void extend_all(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<in
     while(extend_front(comp_path, comp_graph, weights, seen, vis, false)){}
     while(extend_back(comp_path, comp_graph, weights, seen, vis, false)){}
 }
+int local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
+{
+    //return total weight
+    int start;
+    do
+    {
+        start = rng() % comp_graph.size();
+    }while(comp_graph[start].empty());
+    comp_path.clear();
+    comp_path.emplace_back(start);
+    vis[start] = true;
+    for(int u : comp_graph[start])
+        seen[u]++;
+    //building back
+    while(extend_back(comp_path, comp_graph, weights, seen, vis) || extend_back(comp_path, comp_graph, weights, seen, vis, false)){}
+    //building front
+    while(extend_front(comp_path, comp_graph, weights, seen, vis) || extend_front(comp_path, comp_graph, weights, seen, vis, false)){}
+    
+    int result = 0;
+    for(int v : comp_path)
+        result += weights[v];
+    //cerr << result << '\n';
+    return result;
+}
 
+int call_start_search(int N, list<int> &comp_path, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
+{
+    //comp_path puste
+    vector<int> seen(comp_graph.size(), 0);
+    vector<bool> vis(comp_graph.size(), false);
+    list<int> decomp_path;
+    int best_result = 0;
+    while(check_time(6.5f, time_start))
+    {
+        list<int> curr_path;
+        int curr_result = local_search(curr_path, comp_graph, weights, seen, vis);
+        if(curr_result > best_result)
+        {
+            best_result = curr_result;
+            comp_path = curr_path;
+        }
+        seen.assign(comp_graph.size(), 0);
+        vis.assign(comp_graph.size(), false);
+    }
+    //print_final_path(comp_path);
+    //cerr << best_result << '\n';
+    return best_result;
+}
 //DO ZMIANY
-void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit, int &curr_value){
+void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit){
     int pref_value = 0;
-
-    for(auto tail_start = comp_path.begin(); tail_start != comp_path.end() && check_time(time_limit, time_start);)
+    int curr_value = 0;
+    for(int v : comp_path)
+        curr_value += weights[v];
+    for(auto tail_start = comp_path.begin(); tail_start != comp_path.end() && check_time(time_limit, time_start); ++tail_start)
     {   
         list<int> tail = {*tail_start};
 
@@ -728,21 +708,37 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
         for(int v : tail) 
             tail_value += weights[v];
 
-        if(tail_value >= pref_value)
+        if(tail_value > pref_value)
         {
             //cerr << "NEW TAIL\n";
+            // int value = 0;
+            // for(int v : comp_path)
+            //     value += weights[v];
+            // cout << value << " LTAIL-> ";
             unsee_path(comp_path.begin(), tail_start, comp_graph, seen, vis);
             comp_path.erase(comp_path.begin(), tail_start);
             comp_path.splice(comp_path.begin(), tail);
             pref_value = tail_value;
+            // value = 0;
+            // for(int v : comp_path)
+            //     value += weights[v];
+            // cout << value << '\n';
         }
-        else if(tail_value >= curr_value - pref_value - weights[*tail_start])
+        else if(tail_value > curr_value - pref_value - weights[*tail_start])
         {
+            int value = 0;
+            // for(int v : comp_path)
+            //     value += weights[v];
+            // cout << value << '|' << curr_value << " RTAIL-> ";
             unsee_path(next(tail_start), comp_path.end(), comp_graph, seen, vis);
             comp_path.erase(next(tail_start), comp_path.end());
             tail.reverse();
             comp_path.splice(next(tail_start), tail);
             curr_value = pref_value + tail_value + weights[*tail_start];
+            // value = 0;
+            // for(int v : comp_path)
+            //     value += weights[v];
+            // cout << value << '|' << curr_value << '\n';
         }
         else unsee_path(tail, comp_graph, seen, vis);
         
@@ -750,93 +746,188 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
     }
 }
 
-int get_start_node(list<int> &comp_path, vector<vector<int>> &comp_graph){
-    while(true){
-        int random_index = rng() % comp_path.size();
-        int i = 0;
-        for(auto node : comp_path){
-            if(i == random_index) {
-                if(comp_graph[node].size() <= 2) break;    
-                return node;
+// int get_start_node(list<int> &comp_path, vector<vector<int>> &comp_graph){
+//     while(true){
+//         int random_index = rng() % comp_path.size();
+//         int i = 0;
+//         for(auto node : comp_path){
+//             if(i == random_index) {
+//                 if(comp_graph[node].size() <= 2) break;    
+//                 return node;
+//             }
+//             ++i;
+//         }
+//     }
+// }
+
+// void DFS_detour(int v, vector<bool> &visited, vector<vector<int>> &graph, vector<int> &seen, list<int> &partial_path){
+//     stack<int> s;
+//     s.push(v);
+//     partial_path.emplace_back(v); //!
+//     visited[v] = true;
+//     while(!s.empty()){
+//         int u = s.top();
+//         partial_path.emplace_back(u); //!
+//         s.pop();
+//         for(auto neighbor : graph[u]){
+//             seen[neighbor]++; //!
+//             if(!visited[neighbor] && seen[neighbor] == 1){ //!
+//                 visited[neighbor] = true;
+//                 s.push(neighbor);
+//             }
+//             break;
+//         }
+//     } //gdzies tu jeszcze trzeba dopisac ze jesli wierzcholek jest na oryginalnej sciezce to stop
+// }
+
+
+
+// bool is_path_better(list<int> &new_path, list<int> &comp_path){
+//     if(new_path.size() > comp_path.size()) return true;
+//     return false;
+// }
+
+// bool is_path_valid(list<int> &new_path, vector<vector<int>> &comp_graph){
+//     vector<int> seen(comp_graph.size(), 0);
+//     vector<bool> vis(comp_graph.size(), false);
+//     if(!see_path(new_path, comp_graph, seen, vis)) return false;
+//     for(int v : new_path){
+//         if(seen[v] > 1) return false;
+//     }
+//     return true;
+// }
+void update_pref(list<int>::iterator start, list<int>::iterator end, vector<int> &pref_value, vector<int> &weights)
+{
+    int last = pref_value[*start];
+    for(auto it = next(start); it != end; ++it)
+    {
+        pref_value[*it] = last + weights[*it];
+        last = pref_value[*it];
+    }
+}
+void find_new_detour(list<int>::iterator detour_start, list<int> &detour, list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, int max_depth = 50000)
+{
+    auto omit = next(detour_start);
+    unsee_node(*omit, comp_graph, seen, vis);
+    vis[*omit] = true;
+    // for(int v = 0; v < comp_graph.size(); ++v)
+    //     cerr << v << ' ' << seen[v] << '\n';
+    detour = {*detour_start};
+    int detour_value = 0;
+    while((extend_back(detour, comp_graph, weights, seen, vis) || extend_back(detour, comp_graph, weights, seen, vis, false)) && detour.size() < max_depth)
+    {
+        // cout << "Curr detour: ";
+        // for(int d : detour)
+        //     cout << d << ' ';
+        // cout << '\n';
+        // for(int v = 0; v < comp_graph.size(); ++v)
+        //     cerr << v << ": " << seen[v] << '\n';
+        detour_value += weights[detour.back()];
+        //v to connector miedzy budowana sciezynką, a elementami ze ścieżki na prawo od detour_start
+        //v nie moze widziec niczego, co ma pref_value < pref_value[detour_start]
+        //najdalszy na prawo sasiad v ma byc jak najblizej, ale omit sie nie liczy
+        //
+        int detour_end = -1;
+        for(int v : comp_graph[detour.back()])
+            if(!vis[v] && seen[v] == 2)
+            {
+                int best_u = -1;
+                int pref_val_u = INF;
+                for(int u : comp_graph[v])
+                    if(u != detour.back() && u != *omit && vis[u])
+                    {
+                        if(pref_value[u] > pref_value[*omit] && pref_value[u] < pref_val_u)
+                        {
+                            best_u = u;
+                            pref_val_u = pref_value[u];
+                        }
+                        break;
+                    }
+                if(best_u != -1 && detour_value + weights[v] > pref_value[best_u] - weights[best_u] - pref_value[*detour_start])//oplaca sie zrobic ten detour
+                {
+                    // cerr << "Adding " << v << " as connector\n";
+                    detour.emplace_back(v);
+                    see_node(v, comp_graph, seen, vis);
+                    // for(int v = 0; v < comp_graph.size(); ++v)
+                    //     cerr << v << ' ' << seen[v] << '\n';
+                    detour_end = best_u;
+                    break;
+                }
             }
-            ++i;
+        if(detour_end != -1)
+        {
+            // cout << "DETOUR FOUND\n";
+            // for(int v : comp_path)
+            //     cout << v << ' ';
+            // int value = 0;
+            // for(int v : comp_path)
+            //     value += weights[v];
+            // cout << value;
+            see_node(*omit, comp_graph, seen, vis);
+            // for(int v = 0; v < comp_graph.size(); ++v)
+            //     cerr << v << ' ' << seen[v] << '\n';
+            auto end_it = find(omit, comp_path.end(), detour_end);
+            // cerr << "unseeing omited part\n";
+            unsee_path(omit, end_it, comp_graph, seen, vis);
+            // for(int v = 0; v < comp_graph.size(); ++v)
+            //     cerr << v << ' ' << seen[v] << '\n';
+            // cout << "before beginnings: " << *omit << ' ' << *prev(end_it) << '\n';
+            for(auto it = omit; it != end_it; ++it)
+                pref_value[*it] = 0;
+            comp_path.erase(omit, end_it);
+            detour.pop_front();
+            // cout << "detour beginnings: " << detour.front() << ' ' << detour.back() << '\n';
+            comp_path.splice(end_it, detour);
+            // cout << "-> ";
+            // value = 0;
+            // for(int v : comp_path)
+            //     value += weights[v];
+            // cout << value << '\n';
+            // for(int v : comp_path)
+            //     cout << v << ' ';
+            // cout << '\n';
+            update_pref(detour_start, comp_path.end(), pref_value, weights);
+            // test(comp_graph, comp_path);
+            return;
         }
     }
-}
 
-void DFS_detour(int v, vector<bool> &visited, vector<vector<int>> &graph, vector<int> &seen, list<int> &partial_path){
-    stack<int> s;
-    s.push(v);
-    partial_path.emplace_back(v); //!
-    visited[v] = true;
-    while(!s.empty()){
-        int u = s.top();
-        partial_path.emplace_back(u); //!
-        s.pop();
-        for(auto neighbor : graph[u]){
-            seen[neighbor]++; //!
-            if(!visited[neighbor] && seen[neighbor] == 1){ //!
-                visited[neighbor] = true;
-                s.push(neighbor);
-            }
-            break;
-        }
-    } //gdzies tu jeszcze trzeba dopisac ze jesli wierzcholek jest na oryginalnej sciezce to stop
+    see_node(*omit, comp_graph, seen, vis);
+    detour.pop_front();
+    unsee_path(detour, comp_graph, seen, vis);
 }
-
-void find_new_detour(list<int> &new_path, list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, int start_node){
-    list<int> partial_path;
-    vector<int> seen(comp_graph.size(), 0);
-    vector<bool> vis(comp_graph.size(), false);
-    int i = 0;
-    for(auto node : comp_path){
-        if(node == start_node) break;
-        ++i;
-        new_path.emplace_back(node);
-        see_node(node, comp_graph, seen, vis);
-    }
-    DFS_detour(start_node, vis, comp_graph, seen, partial_path);
-    //DO DOPISANIA
-}
-
-bool is_path_better(list<int> &new_path, list<int> &comp_path){
-    if(new_path.size() > comp_path.size()) return true;
-    return false;
-}
-
-bool is_path_valid(list<int> &new_path, vector<vector<int>> &comp_graph){
-    vector<int> seen(comp_graph.size(), 0);
-    vector<bool> vis(comp_graph.size(), false);
-    if(!see_path(new_path, comp_graph, seen, vis)) return false;
-    for(int v : new_path){
-        if(seen[v] > 1) return false;
-    }
-    return true;
-}
-
 //DO ZMIANY
-void find_good_detour(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit){ //DO ZMIANY
-    list<int> new_path;
-    int start_node = get_start_node(comp_path, comp_graph);
-    find_new_detour(new_path, comp_path, comp_graph, weights, start_node);
-    if(is_path_better(new_path, comp_path) && is_path_valid(new_path, comp_graph)){
-        comp_path = new_path;
+void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, clock_t &time_start, float &time_limit)
+{
+    pref_value.assign(comp_graph.size(), 0);
+    pref_value[comp_path.front()] = weights[comp_path.front()];
+    update_pref(comp_path.begin(), comp_path.end(), pref_value, weights);
+    auto end = prev(comp_path.end());
+    list<int> detour;
+    for(auto detour_start = comp_path.begin(); detour_start != end && check_time(time_limit, time_start); ++detour_start)
+    {
+    //     pref_value.assign(comp_graph.size(), 0);
+    //     pref_value[comp_path.front()] = weights[comp_path.front()];
+    // update_pref(comp_path.begin(), comp_path.end(), pref_value, weights);
+        detour.clear();
+        find_new_detour(detour_start, detour, comp_path, comp_graph, weights, seen, vis, pref_value);
     }
 }
 
-void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, list<int> &comp_path, int &curr_value, clock_t &time_start){
+void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, list<int> &comp_path, clock_t &time_start){
     float time_limit = 19.f;
     vector<bool> vis(comp_graph.size(), false);
     vector<int> seen(comp_graph.size(), 0);
+    vector<int> pref_value(comp_graph.size(), 0);
     see_path(comp_path, comp_graph, seen, vis);
     
     while(check_time(time_limit, time_start))
     {
         //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-        find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, curr_value);
+        find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit);
 
         //szukanie objazdu
-        find_good_detour(comp_path, comp_graph, weights, seen, vis, time_start, time_limit);
+        find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit);
         
         //poszerzanie końców
         extend_all(comp_path, comp_graph, weights, seen, vis);
@@ -846,22 +937,21 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
 void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes, int type, clock_t &time_start)
 {
     list<int> comp_path;
-    int curr_value;
 
     if(type == 4){
-        curr_value = call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, curr_value, time_start);
+        call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else if(type == 5)
     {
-        curr_value = get_diameter(comp_graph, comp_path, weights);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, curr_value, time_start);
+        get_diameter(comp_graph, comp_path, weights);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else{
-        curr_value = call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, curr_value, time_start);
+        call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start);
         final_path = comp_path;
     }
 }
@@ -887,9 +977,22 @@ int main()
     best_component = largest_component(which_component);
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, which_component, best_component, type);
     sort_graph(comp_graph);
+    // sort_graph(graph);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
-    //test(N, graph, final_path);
-    //cout << final_path.size() << '\n';
+    // final_path = {14, 12, 1};
+    // list<int> detour;
+    // vector<int> seen(graph.size(), 0);
+    // vector<bool> vis(graph.size(), false);
+    // vector<int> pref_value(graph.size(), 0);
+    // weights = vector<int>(graph.size(), 1);
+    // see_path(final_path, graph, seen, vis);
+    // for(int v = 0; v < graph.size(); ++v)
+    //     cout << v << ' ' << seen[v] << '\n';
+    //pref_value[14] = 1;
+    //update_pref(final_path.begin(), final_path.end(), pref_value, weights);
+    //find_new_detour(final_path.begin(), detour, final_path, graph, weights, seen, vis, pref_value, 12);
+    //test(graph, final_path);
+    //cout << "PATH_SIZE: " << final_path.size() << '\n';
     print_final_path(final_path);
 }
 
