@@ -703,7 +703,6 @@ int call_start_search(int N, list<int> &comp_path, vector<vector<int>> &graph, v
     //cerr << best_result << '\n';
     return best_result;
 }
-//DO ZMIANY
 void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit){
     int pref_value = 0;
     int curr_value = 0;
@@ -742,6 +741,32 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
         
         pref_value += weights[*tail_start];
     }
+}
+
+bool tail_backtrack(int v, vector<bool> visited, vector<vector<int>> &graph, vector<int> seen, list<int> tail, list<int> &best_tail){
+    visited[v] = true;
+    tail.emplace_back(v);
+    if(graph[v].size() == 1){
+        best_tail = tail;
+        return true;
+    }
+    for(auto neigh : graph[v]){
+        seen[neigh]++;
+    }
+    for(auto neigh : graph[v]){
+        if(!visited[neigh]){
+            bool ok = true;
+            for(auto n : graph[neigh]){
+                if(seen[n]){
+                    ok = false;
+                    break;
+                }
+            }
+            if(ok && tail_backtrack(neigh, visited, graph, seen, tail, best_tail)) 
+                return true;
+        }
+    }
+    return false;
 }
 
 void update_pref(list<int>::iterator start, list<int>::iterator end, vector<int> &pref_value, vector<int> &weights)
@@ -859,10 +884,7 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
             break;
         case 5:
-            //print_final_path(comp_path);
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 300, true, true); //szukanie objazdu
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            //find_tail_by_backtrack(comp_path.front(), graph, weights, comp_path, time_start, time_limit);
             break;
         case 4:
             //print_final_path(comp_path);
