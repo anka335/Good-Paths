@@ -498,8 +498,8 @@ int test(vector<vector<int>> &graph, list<int> &path)
     {
         cerr << "node >= N";
         for(int a : path)
-            cout << a << ' ';
-        cout << '\n';
+            cerr << a << ' ';
+        cerr << '\n';
         return 1;
     }
     vis[path.front()] = true;
@@ -809,7 +809,7 @@ void find_new_detour(list<int>::iterator detour_start, list<int> &detour, list<i
     unsee_path(detour, comp_graph, seen, vis);
 }
 
-void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, clock_t &time_start, float &time_limit, int max_depth=1000, bool random=false)
+void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, clock_t &time_start, float &time_limit, int max_depth=1000, bool random=false, bool reverse=true)
 {
     pref_value.assign(comp_graph.size(), 0);
     pref_value[comp_path.front()] = weights[comp_path.front()];
@@ -821,16 +821,19 @@ void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<
         detour.clear();
         find_new_detour(detour_start, detour, comp_path, comp_graph, weights, seen, vis, pref_value, max_depth, random);
     }
-    comp_path.reverse();
-    pref_value.assign(comp_graph.size(), 0);
-    pref_value[comp_path.front()] = weights[comp_path.front()];
-    update_pref(comp_path.begin(), comp_path.end(), pref_value, weights);
-    end = prev(comp_path.end());
-    detour.clear();
-    for(auto detour_start = comp_path.begin(); detour_start != end && check_time(time_limit, time_start); ++detour_start)
+    if(reverse)
     {
+        comp_path.reverse();
+        pref_value.assign(comp_graph.size(), 0);
+        pref_value[comp_path.front()] = weights[comp_path.front()];
+        update_pref(comp_path.begin(), comp_path.end(), pref_value, weights);
+        end = prev(comp_path.end());
         detour.clear();
-        find_new_detour(detour_start, detour, comp_path, comp_graph, weights, seen, vis, pref_value, max_depth, random);
+        for(auto detour_start = comp_path.begin(); detour_start != end && check_time(time_limit, time_start); ++detour_start)
+        {
+            detour.clear();
+            find_new_detour(detour_start, detour, comp_path, comp_graph, weights, seen, vis, pref_value, max_depth, random);
+        }
     }
 }
 
@@ -843,24 +846,39 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
     
     while(check_time(time_limit, time_start))
     {
-        if(type == 3){
+        switch(type)
+        {
+        case 3:
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 9000, true); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 9000, true, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
-        } 
-        else if(type == 7){
+            break;
+        case 7:
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 15000, false); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 15000, false, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
-        }
-        else if(type == 5){ //działa źle - do zmiany
+            break;
+        case 5:
             //print_final_path(comp_path);
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 300, true); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 300, true, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
-        } else { //działa średnio - do zmiany
+            break;
+        case 4:
+            //print_final_path(comp_path);
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 5000, true); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 5000, true, false); //szukanie objazdu
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            break;
+        case 1:
+            //print_final_path(comp_path);
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 10000, true, true); //szukanie objazdu
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            break;
+        default:
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 5000, true, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
         }
     }
@@ -910,7 +928,7 @@ int main()
     sort_graph(comp_graph);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
     // cout << final_path.size() << '\n';
-    test(graph, final_path);
+    //test(graph, final_path);
     print_final_path(final_path);
 }
 
