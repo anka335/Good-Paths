@@ -334,7 +334,7 @@ void compress_branches(int N, vector<vector<int>> &graph, vector<bool> &branches
     get_weights(N_new, comp_nodes, weights);
     get_comp_graph(N, N_new, graph, comp_graph, which_comp, which_component, best_component);  
     
-    print_comp_graph(N_new, comp_graph, weights);
+    //print_comp_graph(N_new, comp_graph, weights);
 }
 
 void no_compress_change(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &which_component, int best_component, vector<int> &weights){
@@ -437,6 +437,16 @@ int unseen_count(int v, vector<vector<int>> &comp_graph, vector<int> &seen)
     return res;
 }
 
+int random_valid_neigh(int v, vector<vector<int>> &comp_graph, vector<int> &seen, vector<bool> &vis)
+{
+    vector<int> all_u;
+    for(int u : comp_graph[v])
+        if(!vis[u] && seen[u] == 1)
+            all_u.emplace_back(u);
+    if(all_u.empty())
+        return -1;
+    return all_u[rng() % all_u.size()];
+}
 int best_heur_neigh(int v, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
 {
     vector<int> best_u;
@@ -605,11 +615,13 @@ void unsee_path(list<int>::iterator begin, list<int>::iterator end, vector<vecto
     for(auto v_it = begin; v_it != end; ++v_it)
         unsee_node(*v_it, graph, seen, vis);
 }
-bool extend_back(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true)
+bool extend_back(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true, bool random=false)
 {
     //return true if it attached a new node
     int v;
-    if(heur)
+    if(random)
+        v = random_valid_neigh(comp_path.back(), comp_graph, seen, vis);
+    else if(heur)
         v = best_heur_neigh(comp_path.back(), comp_graph, weights, seen, vis);
     else
         v = best_neigh(comp_path.back(), comp_graph, weights, seen, vis);
@@ -620,11 +632,13 @@ bool extend_back(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<i
     return true;
 }
 
-bool extend_front(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true)
+bool extend_front(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true, bool random=false)
 {
     //return true if it attached a new node
     int v;
-    if(heur)
+    if(random)
+        v = random_valid_neigh(comp_path.front(), comp_graph, seen, vis);
+    else if(heur)
         v = best_heur_neigh(comp_path.front(), comp_graph, weights, seen, vis);
     else
         v = best_neigh(comp_path.front(), comp_graph, weights, seen, vis);
@@ -740,7 +754,7 @@ void update_pref(list<int>::iterator start, list<int>::iterator end, vector<int>
     }
 }
 
-void find_new_detour(list<int>::iterator detour_start, list<int> &detour, list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, int max_depth = 50000)
+void find_new_detour(list<int>::iterator detour_start, list<int> &detour, list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, int max_depth = 1000, bool random=false)
 {
     auto omit = next(detour_start);
     unsee_node(*omit, comp_graph, seen, vis);
@@ -748,7 +762,7 @@ void find_new_detour(list<int>::iterator detour_start, list<int> &detour, list<i
     detour = {*detour_start};
     int detour_value = 0;
 
-    while((extend_back(detour, comp_graph, weights, seen, vis) || extend_back(detour, comp_graph, weights, seen, vis, false)) && detour.size() < max_depth)
+    while((extend_back(detour, comp_graph, weights, seen, vis, true, random) || extend_back(detour, comp_graph, weights, seen, vis, false, random)) && detour.size() < max_depth)
     {
         detour_value += weights[detour.back()];
         int detour_end = -1;
@@ -795,7 +809,7 @@ void find_new_detour(list<int>::iterator detour_start, list<int> &detour, list<i
     unsee_path(detour, comp_graph, seen, vis);
 }
 
-void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, clock_t &time_start, float &time_limit)
+void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, vector<int> &pref_value, clock_t &time_start, float &time_limit, int max_depth=1000, bool random=false)
 {
     pref_value.assign(comp_graph.size(), 0);
     pref_value[comp_path.front()] = weights[comp_path.front()];
@@ -805,7 +819,18 @@ void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<
     for(auto detour_start = comp_path.begin(); detour_start != end && check_time(time_limit, time_start); ++detour_start)
     {
         detour.clear();
-        find_new_detour(detour_start, detour, comp_path, comp_graph, weights, seen, vis, pref_value);
+        find_new_detour(detour_start, detour, comp_path, comp_graph, weights, seen, vis, pref_value, max_depth, random);
+    }
+    comp_path.reverse();
+    pref_value.assign(comp_graph.size(), 0);
+    pref_value[comp_path.front()] = weights[comp_path.front()];
+    update_pref(comp_path.begin(), comp_path.end(), pref_value, weights);
+    end = prev(comp_path.end());
+    detour.clear();
+    for(auto detour_start = comp_path.begin(); detour_start != end && check_time(time_limit, time_start); ++detour_start)
+    {
+        detour.clear();
+        find_new_detour(detour_start, detour, comp_path, comp_graph, weights, seen, vis, pref_value, max_depth, random);
     }
 }
 
@@ -818,18 +843,24 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
     
     while(check_time(time_limit, time_start))
     {
-        if(type == 3 || type == 7){ //działa bardzo dobrze - nie jest do zmiany
+        if(type == 3){
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 9000, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
-        } else if(type == 5){ //działa źle - do zmiany
+        } 
+        else if(type == 7){
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 15000, false); //szukanie objazdu
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+        }
+        else if(type == 5){ //działa źle - do zmiany
             //print_final_path(comp_path);
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 300, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
         } else { //działa średnio - do zmiany
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 5000, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
         }
     }
@@ -878,6 +909,8 @@ int main()
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, which_component, best_component, type);
     sort_graph(comp_graph);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
+    // cout << final_path.size() << '\n';
+    test(graph, final_path);
     print_final_path(final_path);
 }
 
