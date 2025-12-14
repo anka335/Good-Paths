@@ -385,7 +385,6 @@ void print_final_path(list<int> &final_path){
 
 void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &comp_path, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes){
     int neigh_before = -1, neigh_after = -1;
-    //print_final_path(comp_path);
     while(!comp_path.empty()){
         int v = comp_path.front();
         comp_path.pop_front();
@@ -399,15 +398,8 @@ void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> 
             continue;
         }
         int id = v-N-1;
-        //cout << "id: " << id <<  " comp nodes size: " << comp_nodes.size() <<'\n';
         CompNode comp_node = comp_nodes[id];
         list<int> path = comp_node.path;
-        //cout << "v: " << v << " neigh_before: " << neigh_before << " neigh_before: " << neigh_before << " neigh_after: " << neigh_after << " comp_node.last_nonbranch: " << comp_node.last_nonbranch << " comp_node.first_nonbranch: " << comp_node.first_nonbranch << '\n';
-        //cout << "path: ";
-        /*for(auto p : path){
-            cout << p << ' ';
-        }
-        cout << '\n';*/
         
         if(neigh_after != -1 && comp_node.last_nonbranch != neigh_after) reverse(path.begin(), path.end());
         else if(neigh_before != -1 && comp_node.first_nonbranch != neigh_before) reverse(path.begin(), path.end());
@@ -417,10 +409,6 @@ void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> 
         }
         neigh_before = v;
     }
-    /*for(auto p : final_path){
-            cout << p << " ";
-        }
-        cout << '\n';*/
 }
 
 bool check_time(float time_limit, clock_t &time_start){
@@ -649,12 +637,21 @@ bool extend_front(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<
     return true;
 }
 
+void extend_back_far(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true, bool random=false){
+    while(extend_back(comp_path, comp_graph, weights, seen, vis, heur, random)){}
+}
+
+void extend_front_far(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool heur=true, bool random=false){
+    while(extend_front(comp_path, comp_graph, weights, seen, vis, heur, random)){}
+}
+
 void extend_all(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis){
     while(extend_front(comp_path, comp_graph, weights, seen, vis)){}
     while(extend_back(comp_path, comp_graph, weights, seen, vis)){}
     while(extend_front(comp_path, comp_graph, weights, seen, vis, false)){}
     while(extend_back(comp_path, comp_graph, weights, seen, vis, false)){}
 }
+
 int local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis)
 {
     //return total weight
@@ -668,10 +665,8 @@ int local_search(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<i
     vis[start] = true;
     for(int u : comp_graph[start])
         seen[u]++;
-    //building back
-    while(extend_back(comp_path, comp_graph, weights, seen, vis) || extend_back(comp_path, comp_graph, weights, seen, vis, false)){}
-    //building front
-    while(extend_front(comp_path, comp_graph, weights, seen, vis) || extend_front(comp_path, comp_graph, weights, seen, vis, false)){}
+    //building back and front
+    extend_all(comp_path, comp_graph, weights, seen, vis);
     
     int result = 0;
     for(int v : comp_path)
@@ -703,7 +698,55 @@ int call_start_search(int N, list<int> &comp_path, vector<vector<int>> &graph, v
     //cerr << best_result << '\n';
     return best_result;
 }
-void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit, bool random=false){
+
+bool tail_backtrack(int v, vector<bool> visited, vector<vector<int>> &graph, vector<int> &weights, vector<int> seen, list<int> curr_tail, list<int> &best_tail, int best_weight=0, int curr_weight=0){
+    visited[v] = true;
+    curr_tail.emplace_back(v);
+    curr_weight += weights[v];
+    //cout << "best_weight: " << best_weight << ", curr_weight: " << curr_weight << "\n";
+    if(graph[v].size() == 1){
+        if(curr_weight > best_weight){
+            best_tail = curr_tail;
+            best_weight = curr_weight;
+            return true;
+        } else
+            return false;
+    }
+    for(auto neigh : graph[v]){
+        seen[neigh]++;
+    }
+    for(auto neigh : graph[v]){
+        if(!visited[neigh]){
+            bool ok = true;
+            for(auto n : graph[neigh]){
+                if(seen[n]){
+                    ok = false;
+                    break;
+                }
+            }
+            if(ok && tail_backtrack(neigh, visited, graph, weights, seen, curr_tail, best_tail, best_weight, curr_weight)) 
+                return true;
+        }
+    }
+    return false;
+}
+
+void call_tail_backtrack(list<int> &tail, vector<vector<int>> &comp_graph, vector<int> &weights){
+    vector<bool> visited(comp_graph.size(), false);
+    vector<int> seen(comp_graph.size(), 0);
+    tail_backtrack(*tail.begin(), visited, comp_graph, weights, seen, list<int>(), tail);
+}
+
+void search_for_tail(list<int> &tail, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, bool random=false, bool backtrack=false){
+   // if(backtrack){
+    //    call_tail_backtrack(tail, comp_graph, weights);
+    //} else {
+        extend_front_far(tail, comp_graph, weights, seen, vis, true, random);
+        extend_front_far(tail, comp_graph, weights, seen, vis, false, random);
+    //}
+}
+
+void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, vector<bool> &vis, clock_t &time_start, float &time_limit, bool random=false, bool backtrack=false){
     int pref_value = 0;
     int curr_value = 0;
     for(int v : comp_path)
@@ -711,8 +754,7 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
     for(auto tail_start = comp_path.begin(); tail_start != comp_path.end() && check_time(time_limit, time_start); ++tail_start)
     {   
         list<int> tail = {*tail_start};
-        while(extend_front(tail, comp_graph, weights, seen, vis, true, random)) {}
-        while(extend_front(tail, comp_graph, weights, seen, vis, false, random)) {}
+        search_for_tail(tail, comp_graph, weights, seen, vis, random, backtrack);
 
         tail.pop_back();
         int tail_value = 0;
@@ -739,33 +781,9 @@ void find_alternative_tail(list<int> &comp_path, vector<vector<int>> &comp_graph
         else unsee_path(tail, comp_graph, seen, vis);
         
         pref_value += weights[*tail_start];
-    }
-}
 
-bool tail_backtrack(int v, vector<bool> visited, vector<vector<int>> &graph, vector<int> seen, list<int> tail, list<int> &best_tail){
-    visited[v] = true;
-    tail.emplace_back(v);
-    if(graph[v].size() == 1){
-        best_tail = tail;
-        return true;
+        //print_final_path(comp_path);
     }
-    for(auto neigh : graph[v]){
-        seen[neigh]++;
-    }
-    for(auto neigh : graph[v]){
-        if(!visited[neigh]){
-            bool ok = true;
-            for(auto n : graph[neigh]){
-                if(seen[n]){
-                    ok = false;
-                    break;
-                }
-            }
-            if(ok && tail_backtrack(neigh, visited, graph, seen, tail, best_tail)) 
-                return true;
-        }
-    }
-    return false;
 }
 
 void update_pref(list<int>::iterator start, list<int>::iterator end, vector<int> &pref_value, vector<int> &weights)
@@ -885,9 +903,8 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
             break;
         case 5:
-            //find_tail_by_backtrack(comp_path.front(), graph, weights, comp_path, time_start, time_limit);
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, false, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 500, true, true); //szukanie objazdu
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
             break;
