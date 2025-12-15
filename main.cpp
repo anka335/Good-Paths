@@ -841,7 +841,7 @@ void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<
     }
 }
 
-void backtrack(int v, vector<bool> visited, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> seen, list<int> curr_path, list<int> &best_path, clock_t &time_start, int &best_weight, int curr_weight=0){
+void backtrack(int v, vector<bool> &visited, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, list<int> &curr_path, list<int> &best_path, clock_t &time_start, int &best_weight, int curr_weight=0){
     if(!check_time(19.0f, time_start)) return;
     curr_path.emplace_back(v);
     curr_weight += weights[v];
@@ -865,6 +865,9 @@ void backtrack(int v, vector<bool> visited, vector<vector<int>> &comp_graph, vec
         best_path = curr_path;
         best_weight = curr_weight;
     }
+    unsee_node(v, comp_graph, seen, visited);
+    curr_path.pop_back();
+    curr_weight -= weights[v];
 }
 
 int get_weight(list<int> &path, vector<int> &weights){
@@ -879,9 +882,10 @@ void call_backtrack(list<int> &path, vector<vector<int>> &comp_graph, vector<int
     vector<bool> visited(comp_graph.size(), false);
     vector<int> seen(comp_graph.size(), 0);
     int best_weight = get_weight(path, weights);
+    list<int> curr_path;
     for(int i = 0; i < comp_graph.size(); ++i){
         if(!comp_graph[i].empty())
-            backtrack(i, visited, comp_graph, weights, seen, list<int>(), path, time_start, best_weight, 0);
+            backtrack(i, visited, comp_graph, weights, seen, curr_path, path, time_start, best_weight, 0);
     }
     //print_final_path(path);
 }
