@@ -377,10 +377,10 @@ void change_graph(int N, int M, vector<vector<int>> &graph, vector<bool> &branch
 
 void print_final_path(list<int> &final_path){
     cout << final_path.size() << "\n";
-    //for(auto node : final_path){
-    //    cout << node << " ";
-    //}
-    //cout << '\n';
+    for(auto node : final_path){
+       cout << node << " ";
+    }
+    cout << '\n';
 }
 
 void decompress_branches(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_graph, vector<int> &weights, list<int> &comp_path, list<int> &final_path, vector<int> &which_comp, vector<CompNode> &comp_nodes){
@@ -883,10 +883,15 @@ void call_backtrack(list<int> &path, vector<vector<int>> &comp_graph, vector<int
     vector<int> seen(comp_graph.size(), 0);
     int best_weight = get_weight(path, weights);
     list<int> curr_path;
-    for(int i = 0; i < comp_graph.size(); ++i){
+    //int elapses = 0;
+    for(int i = 0; i < comp_graph.size() && check_time(time_limit, time_start); ++i){
         if(!comp_graph[i].empty())
+        {
             backtrack(i, visited, comp_graph, weights, seen, curr_path, path, time_start, best_weight, time_limit, 0);
+            //elapses++;
+        }
     }
+    //cerr << elapses << '\n';
     //print_final_path(path);
 }
 
@@ -914,7 +919,12 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
             break;
         case 5:
-            call_backtrack(comp_path, comp_graph, weights, time_start);
+            //call_backtrack(comp_path, comp_graph, weights, time_start);
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 1000, true, true); //szukanie objazdu
+            find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 1000, true, false);
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
             break;
         case 4:
             //print_final_path(comp_path);
@@ -959,6 +969,7 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
     }
     else if(type == 5)
     {
+        call_backtrack(comp_path, comp_graph, weights, time_start, 3.0f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
