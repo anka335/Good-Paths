@@ -542,10 +542,13 @@ int test(vector<vector<int>> &graph, list<int> &path)
 
 
 
-void sort_graph(vector<vector<int>> &graph)
+void sort_graph(vector<vector<int>> &graph, vector<int> &weights)
 {
-    for(int i = 0; i < graph.size(); ++i)
-        sort(graph[i].begin(), graph[i].end());
+    for(int i = 0; i < graph.size(); ++i){
+        sort(graph[i].begin(), graph[i].end(), [&](int a, int b) {
+            return weights[a] > weights[b];
+        });
+    }
 }
 
 bool is_edge(int v, int u, vector<vector<int>> &graph)
@@ -978,6 +981,7 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
     list<int> comp_path;
 
     if(type == 4){
+        sort_graph(comp_graph, weights);
         call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 4.f);
         //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
@@ -985,14 +989,15 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
     }
     else if(type == 5)
     {
+        sort_graph(comp_graph, weights);
         call_backtrack(comp_path, comp_graph, weights, time_start, 18.1f, 0.19f);
-        //call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.0f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.4f);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else if(type == 1)
     {
         //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
+        sort_graph(comp_graph, weights);
         call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
         final_path = comp_path;
@@ -1033,9 +1038,7 @@ int main()
     //cerr << "TYPE: " << type << '\n'; 
     best_component = largest_component(which_component);
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, which_component, best_component, type);
-    sort_graph(comp_graph);
+
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
-    // test(graph, final_path);
-    // cout << final_path.size() << '\n';
     print_final_path(final_path);
 }
