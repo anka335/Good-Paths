@@ -841,8 +841,8 @@ void find_detours(list<int> &comp_path, vector<vector<int>> &comp_graph, vector<
     }
 }
 
-void backtrack(int v, vector<bool> &visited, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, list<int> &curr_path, list<int> &best_path, clock_t &time_start, int &best_weight, float time_limit=19.0f, int curr_weight=0){
-    if(!check_time(time_limit, time_start)) return;
+void backtrack(int v, vector<bool> &visited, vector<vector<int>> &comp_graph, vector<int> &weights, vector<int> &seen, list<int> &curr_path, list<int> &best_path, clock_t &last_update, int &best_weight, float time_limit=19.0f, int curr_weight=0){
+    if(!check_time(time_limit, last_update)) return;
     curr_path.emplace_back(v);
     curr_weight += weights[v];
     see_node(v, comp_graph, seen, visited);
@@ -857,11 +857,13 @@ void backtrack(int v, vector<bool> &visited, vector<vector<int>> &comp_graph, ve
                     break;
                 }
             }
-            if(ok) backtrack(neigh, visited, comp_graph, weights, seen, curr_path, best_path, time_start, best_weight, time_limit, curr_weight);
+            if(ok) backtrack(neigh, visited, comp_graph, weights, seen, curr_path, best_path, last_update, best_weight, time_limit, curr_weight);
         }
     }
     if(curr_weight > best_weight){
-        //cout << "found better path with weight " << curr_weight << "\n";
+        // if(curr_weight != best_weight + 1)
+        //     cerr << fixed << setprecision(4) << ((float)(clock()-last_update)) / CLOCKS_PER_SEC << "s found better path with weight " << curr_weight << "\n";
+        last_update = clock();
         best_path = curr_path;
         best_weight = curr_weight;
     }
@@ -878,19 +880,35 @@ int get_weight(list<int> &path, vector<int> &weights){
     return total_weight;
 }
 
-void call_backtrack(list<int> &path, vector<vector<int>> &comp_graph, vector<int> &weights, clock_t &time_start, float time_limit=19.0f){
+void call_backtrack(list<int> &path, vector<vector<int>> &comp_graph, vector<int> &weights, clock_t &time_start, float time_limit=19.0f, float timeout=0.5f){
     vector<bool> visited(comp_graph.size(), false);
     vector<int> seen(comp_graph.size(), 0);
     int best_weight = get_weight(path, weights);
     list<int> curr_path;
+    clock_t last_update;
     //int elapses = 0;
-    for(int i = 0; i < comp_graph.size() && check_time(time_limit, time_start); ++i){
-        if(!comp_graph[i].empty())
+    int start;
+    while(check_time(time_limit, time_start))
+    {
+        do
         {
-            backtrack(i, visited, comp_graph, weights, seen, curr_path, path, time_start, best_weight, time_limit, 0);
-            //elapses++;
-        }
+            start = rng() % comp_graph.size();
+        }while(comp_graph[start].empty());
+        //cerr << "start from " << start << '\n';
+        curr_path.clear();
+        last_update = clock();
+        backtrack(start, visited, comp_graph, weights, seen, curr_path, path, last_update, best_weight, timeout, 0);
     }
+    // for(int i = 0; i < comp_graph.size() && check_time(time_limit, time_start); ++i){
+    //     if(!comp_graph[i].empty())
+    //     {
+    //         cerr << "start from " << i << '\n';
+    //         curr_path.clear();
+    //         last_update = clock();
+    //         backtrack(i, visited, comp_graph, weights, seen, curr_path, path, last_update, best_weight, timeout, 0);
+    //         //elapses++;
+    //     }
+    // }
     //cerr << elapses << '\n';
     //print_final_path(path);
 }
@@ -919,7 +937,6 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
             extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
             break;
         case 5:
-            //call_backtrack(comp_path, comp_graph, weights, time_start);
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 1000, true, true); //szukanie objazdu
@@ -928,7 +945,6 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
             break;
         case 4:
             //print_final_path(comp_path);
-            //call_backtrack(comp_path, comp_graph, weights, time_start);
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
             find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 1000, true, true); //szukanie objazdu
@@ -962,34 +978,38 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
     list<int> comp_path;
 
     if(type == 4){
-        call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 12.5f);
-        //call_backtrack(comp_path, comp_graph, weights, time_start, 3.0f);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type);
+        call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 4.f);
+        //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else if(type == 5)
     {
-        call_backtrack(comp_path, comp_graph, weights, time_start, 15.0f);
+        call_backtrack(comp_path, comp_graph, weights, time_start, 18.1f, 0.19f);
         //call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.0f);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.4f);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else if(type == 1)
     {
+        //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
         call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
         final_path = comp_path;
         //decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
-    else if(type == 1)
+    else if(type == 3)
     {
-        call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type);
+        call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
+        //call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
         final_path = comp_path;
+        //decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else {
+        //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
         call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type);
+        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
         final_path = comp_path;
     }
 }
@@ -1015,7 +1035,7 @@ int main()
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, which_component, best_component, type);
     sort_graph(comp_graph);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
-    test(graph, final_path);
-    cout << final_path.size() << '\n';
-    // print_final_path(final_path);
+    // test(graph, final_path);
+    // cout << final_path.size() << '\n';
+    print_final_path(final_path);
 }
