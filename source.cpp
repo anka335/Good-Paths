@@ -540,21 +540,10 @@ int test(vector<vector<int>> &graph, list<int> &path)
     return 0;
 }
 
-void sort_graph(vector<vector<int>> &graph, vector<int> &weights)
+void sort_graph(vector<vector<int>> &graph)
 {
-    for(int i = 0; i < graph.size(); ++i){
-        sort(graph[i].begin(), graph[i].end(), [&](int a, int b) {
-            return weights[a] > weights[b];
-        });
-    }
-    /*for(int i = 0; i < graph.size(); ++i){
-        if(graph[i].empty()) continue;
-        cerr << i << ": ";
-        for(auto n : graph[i]){
-            cerr << n << "," << weights[n] << " ";
-        }
-        cerr << '\n';
-    }*/
+    for(int i = 0; i < graph.size(); ++i)
+        sort(graph[i].begin(), graph[i].end());
 }
 
 bool is_edge(int v, int u, vector<vector<int>> &graph)
@@ -934,50 +923,50 @@ void call_main_search(int N, vector<vector<int>> &graph, vector<vector<int>> &co
         switch(type)
         {
         case 3:
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 9000, true, true); //szukanie objazdu
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie koï¿ï¾cï¿ï¾³w
             break;
         case 7:
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 20000, false, true); //szukanie objazdu
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie koï¿ï¾cï¿ï¾³w
             break;
         case 5:
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 1000, true, true); //szukanie objazdu
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 1000, true, false);
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie koï¿ï¾cï¿ï¾³w
             break;
         case 4:
             //print_final_path(comp_path);
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 1000, true, true); //szukanie objazdu
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie koï¿ï¾cï¿ï¾³w
             break;
         case 1:
             //print_final_path(comp_path);
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 25000, true, true); //szukanie objazdu
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie koï¿ï¾cï¿ï¾³w
             break;
         case 6:
             //print_final_path(comp_path);
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 100, true, true); //szukanie objazdu
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie koï¿ï¾cï¿ï¾³w
             break;
         case 2:
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
-            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla każdego wierzchołka z ścieżki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
+            find_alternative_tail(comp_path, comp_graph, weights, seen, vis, time_start, time_limit, true); //budowanie alternatywnego taila dla kaï¿ï¾¼dego wierzchoï¿ï¾ka z ï¿ï¾cieï¿ï¾¼ki po kolei
             find_detours(comp_path, comp_graph, weights, seen, vis, pref_value, time_start, time_limit, 10000, true, true); //szukanie objazdu
-            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie końców
+            extend_all(comp_path, comp_graph, weights, seen, vis); //poszerzanie koï¿ï¾cï¿ï¾³w
         }
     }
 }
@@ -987,23 +976,21 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
     list<int> comp_path;
 
     if(type == 4){
-        sort_graph(comp_graph, weights);
-        //call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 4.f);
-        call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
+        call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 4.f);
+        //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else if(type == 5)
     {
-        sort_graph(comp_graph, weights);
-        call_backtrack(comp_path, comp_graph, weights, time_start, 18.1f, 0.19f);
+        sort_graph(comp_graph);
+        call_backtrack(comp_path, comp_graph, weights, time_start, 18.5f, 0.15f);
         //call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.0f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.4f);
         decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
     }
     else if(type == 1)
     {
-        sort_graph(comp_graph, weights);
         //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
         call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
@@ -1012,17 +999,12 @@ void find_solution(int N, vector<vector<int>> &graph, vector<vector<int>> &comp_
     }
     else if(type == 3)
     {
+        sort_graph(comp_graph);
         call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
         //call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
         call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
         final_path = comp_path;
         //decompress_branches(N, graph, comp_graph, weights, comp_path, final_path, which_comp, comp_nodes);
-    }
-    else if(type == 2){
-        sort_graph(comp_graph, weights);
-        call_start_search(N, comp_path, graph, comp_graph, weights, which_comp, comp_nodes, type, time_start, 3.5f);
-        call_main_search(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, comp_path, time_start, type, 19.f);
-        final_path = comp_path;
     }
     else {
         //call_backtrack(comp_path, comp_graph, weights, time_start, 6.5f, 0.2f);
@@ -1052,7 +1034,7 @@ int main()
     best_component = largest_component(which_component);
     change_graph(N, M, graph, branches, which_comp, comp_nodes, weights, comp_graph, which_component, best_component, type);
     find_solution(N, graph, comp_graph, weights, final_path, which_comp, comp_nodes, type, time_start);
-    //test(graph, final_path);
-    //cout << final_path.size() << '\n';
+    // test(graph, final_path);
+    // cout << final_path.size() << '\n';
     print_final_path(final_path);
 }
