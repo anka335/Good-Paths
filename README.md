@@ -5,3 +5,5 @@
 ## short version file - Joanna_Zubik_Jedrzej_Kolski.cpp
 ## long version file - Joanna_Zubik_Jedrzej_Kolski_long.cpp
 ## documentation - Good_Paths.pdf
+
+project was created in pair with Jędrzej Kolski (https://github.com/Jeziorop?tab=repositories)
