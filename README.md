@@ -26,10 +26,15 @@ We searched for percentage of bridges, number of components and average degree i
 
   
 <img width="722" height="253" alt="image" src="https://github.com/user-attachments/assets/45991eb8-1bc1-400d-a4ad-600ddad18d3f" />
+<br>
 <img width="668" height="164" alt="image" src="https://github.com/user-attachments/assets/bccbe5d1-67b0-4701-a772-fab14370381d" />
+<br>
 <img width="408" height="159" alt="image" src="https://github.com/user-attachments/assets/69dc0ba2-e225-42d9-b516-9492da783904" />
+<br>
 <img width="602" height="163" alt="image" src="https://github.com/user-attachments/assets/23e3a7ef-9679-4840-9ee6-824a45db6552" />
+<br>
 <img width="487" height="164" alt="image" src="https://github.com/user-attachments/assets/00fc5524-31c7-431f-8d5f-4cee21c5cfb9" />
+<br>
 <img width="294" height="349" alt="image" src="https://github.com/user-attachments/assets/79ebf0f0-31bc-478c-aa79-944f3be7e5a7" />
 
 
