@@ -1,4 +1,4 @@
-# "Good Paths" - combinatorial optimization project
+# "Good Paths" - combinatorial optimization project by Joanna Zubik and Jędrzej Kolski
 ## short version - https://optil.io/optilion/problem/3225#tab-4 (anka3352)
 ## long version - https://optil.io/optilion/problem/3227#tab-4 (anka3352)
 
@@ -9,10 +9,8 @@
 project was created in pair with Jędrzej Kolski (https://github.com/Jeziorop?tab=repositories)
 
 
-
-Good Paths - Joanna Zubik and Jędrzej Kolski
-
 # Good Paths Short
+https://optil.io/optilion/problem/3225
 
 ## Main Idea
 
@@ -155,6 +153,7 @@ vector&lt;int&gt; seen - a lookup table that stores for each node number of neig
 vector&lt;bool&gt; vis - a lookup table that's true if given node is in current path and false otherwise
 
 # Good paths long
+https://optil.io/optilion/problem/3227
 
 ## What was changed
 
