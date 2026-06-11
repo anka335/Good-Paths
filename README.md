@@ -1,26 +1,18 @@
 # "Good Paths" - combinatorial optimization project by Joanna Zubik and Jędrzej Kolski
-## short version - https://optil.io/optilion/problem/3225#tab-4 (anka3352)
-## long version - https://optil.io/optilion/problem/3227#tab-4 (anka3352)
 
-## short version file - Joanna_Zubik_Jedrzej_Kolski.cpp
-## long version file - Joanna_Zubik_Jedrzej_Kolski_long.cpp
-## documentation - Good_Paths.pdf
-
-project was created in pair with Jędrzej Kolski (https://github.com/Jeziorop?tab=repositories)
+### [implementation for the short variant](good_paths_short.cpp) with score at [link](https://optil.io/optilion/problem/3225#tab-4), look for *anka3352*
+### [implementation for the long variant](good_paths_long.cpp) with score at [link](https://optil.io/optilion/problem/3227#tab-4), look for *anka3352*
+project was created from scratch (without LLMs) in cooperation with [Jędrzej Kolski](https://github.com/Jeziorop?tab=repositories)
 
 
-# Good Paths Short
+## Problem description of Good Paths Short
 https://optil.io/optilion/problem/3225
 
-## Main Idea
-
-At the beginning we check for a graph type and compress graph. Then depending on which one is it, we run backtrack or heuristic-based search and then the local search on the best path found.
-
-## More in-depth description of used techniques
+## In-depth description of used techniques
 
 ### Data analysis and graph types
 
-We searched for percentage of bridges, number of components and average degree in different types. By running test programs that showed solutions corresponding to different cases we distinguished 7 different graph types (you can see their description on figures below)
+We searched for percentage of bridges, number of components and average degree of nodes. By running test programs that showed solutions corresponding to different cases we distinguished 7 different graph types (you can see their description on figures below).
 
   
 <img width="722" height="253" alt="image" src="https://github.com/user-attachments/assets/45991eb8-1bc1-400d-a4ad-600ddad18d3f" />
@@ -110,7 +102,7 @@ We start it at a random node and run it for some particular time. Its purpose is
 
 ### Heuristic-based search (start search)
 
-Heuristic approach assumes, that the best extension is the one which sees as little unseen nodes (nodes that haven't been seen by nodes from path) as possible (at least one).
+Heuristic approach assumes, that the best extension is the one which sees as little unseen nodes (nodes that haven't been seen by nodes from path) as possible (but at least one).
 
 ### Local search (main search) - the idea
 
@@ -152,7 +144,7 @@ vector&lt;int&gt; seen - a lookup table that stores for each node number of neig
 
 vector&lt;bool&gt; vis - a lookup table that's true if given node is in current path and false otherwise
 
-# Good paths long
+# Problem description of Good Paths Short
 https://optil.io/optilion/problem/3227
 
 ## What was changed
